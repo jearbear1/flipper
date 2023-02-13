@@ -12,25 +12,28 @@
 .global fmr_call
 .thumb_func
 fmr_call:
-    /* Save registers. */
+    /* Push Platform Specific Register, Callee Save Registers and Link Register onto stack */
     push { r5-r11, lr }
-    /* Save the function address into r4. */
+    /* Save the function address into r5. */
     mov _function, r0
     /* Load the return type. */
     mov retv, r1
-    /* Load the argument count into r5. */
+    /* Load the argument count into r7. */
     mov argc, r2
-    /* Load the argument types into r6. */
+    /* Load the argument types into r8. */
     mov argt, r3
-    /* Load the address of the argument list into r7. */
+    /* Load the address of the argument list into r9. */
     ldr _argv, [sp, #32]
     /* Clear the argument index register. */
     mov argi, #0
+
 _load:
     cmp argc, #0
     beq _call
 
+    /* place r8 into temp */
     mov temp, argt
+    /* encode type with 4 bits register is 32 bits so and with 15 to remove unwanted bits */
     and temp, 0xF
 
     # lf_int8_t
@@ -77,8 +80,10 @@ _load_64:
 
 _load_int:
 _load_ptr:
+/* Dereference argv pointer, store in temp */
     ldr temp, [_argv, #0]
-    add _argv, #8
+/* Increment the argv pointer by four. */
+    add _argv, #4
 
 _load_done:
     /* If the argument index is less than 4, load the argument into the appropriate register. */
@@ -108,8 +113,11 @@ _write_stack:
     b _fail
 
 _write_done:
+    /* shift off the argument types */
     lsrs argt, #4
+    /* reduce argument count */
     sub argc, #1
+    /* increase argument index */
     add argi, #1
     b _load
 
@@ -143,6 +151,7 @@ _ret:
     b _fail
 
 _ret_void:
+    /* clear r0 and r1 */
     mov r0, #0
     mov r1, #0
     b _call_done
@@ -161,6 +170,7 @@ _fail:
     mov r0, #-1
     mov r1, #-1
 _call_done:
+    /* take used registers and program counter off of the stack */
     pop { _function-temp, pc }
 
 .end
