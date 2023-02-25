@@ -27,6 +27,8 @@
 #define KYEL "\x1B[33m"
 #endif
 
+extern void _lf_debug(const char *fmt, ...);
+
 #define lf_debug(fmt, ...) _lf_debug(fmt "\n", ##__VA_ARGS__)
 
 /* Packed attribute. */
