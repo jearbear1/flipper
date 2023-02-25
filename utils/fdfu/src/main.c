@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <flipper.h>
+#include <flipper/carbon.h>
 #include <flipper/platforms/atsam4s/atsam4s.h>
 
 /* Defines the XMODEM flow control bytes. */
