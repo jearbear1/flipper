@@ -3,8 +3,8 @@
 #ifndef __carbon_h__
 #define __carbon_h__
 
-#include <atmegau2.h>
-#include <atsam4s.h>
+#include <flipper/platforms/atmegau2/atmegau2.h>
+#include <flipper/platforms/atsam4s/atsam4s.h>
 
 struct _carbon_context {
     /* Device that handles interacting with the u2. (ATMEGA16U2) */

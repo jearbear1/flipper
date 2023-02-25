@@ -32,7 +32,8 @@ LDFLAGS = -L/opt/homebrew/Cellar/arm-gcc-bin@12/12.2.Rel1/arm-none-eabi/lib/thum
 				  -lm \
 				  -L/opt/homebrew/Cellar/arm-gcc-bin@12/12.2.Rel1/lib/gcc/arm-none-eabi/12.2.1/thumb/v7e-m+fp/softfp \
 				  -lgcc \
-				  -Tplatforms/atsam4s/config/sam4s16.ld
+				  -Tplatforms/atsam4s/config/sam4s16.ld \
+				  -no-enum-size-warning
 
 
 $(eval $(call ADD_TARGET,atsam4s))
