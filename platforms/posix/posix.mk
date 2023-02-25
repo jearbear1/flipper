@@ -12,10 +12,11 @@ INC_DIRS =  . \
 			platforms/atmegau2/include \
 			platforms/atsam4s/include \
 			platforms/atsam4s/asf/include \
-			platforms $(BUILD)/atsam4s/gen/api
+			platforms/posix/include \
+			$(BUILD)/atsam4s/gen/api
 
 SRC_DIRS = lib \
-			os/arch/x64 \
+			os/arch/arm64 \
 			platforms/posix/src \
 			$(BUILD)/atsam4s/gen/api
 

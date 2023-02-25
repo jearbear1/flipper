@@ -93,7 +93,7 @@ $(BUILD)/$1/$$(SO): $$(OBJS) $$(GEN_OBJS)
 
 # Rule to make ELF.
 $(BUILD)/$1/gen/$$(ELF): $$(OBJS)
-	$(_v)$$($1_LD) -o $$@ $$^ $$($1_LDFLAGS) --unresolved-symbols=ignore-all
+	$(_v)$$($1_LD) -o $$@ $$^ $$($1_LDFLAGS)
 
 # Rule to make ELF.
 $(BUILD)/$1/$$(ELF): $$(OBJS) $$(GEN_OBJS)
@@ -108,7 +108,7 @@ $(BUILD)/$1/git.mk: | $(BUILD)/$1/gen/git/.dir
 
 # Rule to build the generated API C files
 $(BUILD)/$1/api.mk: $(BUILD)/$1/gen/$$(ELF) | $(BUILD)/$1/gen/api/.dir
-	$(_v)fdwarf $$< c $(BUILD)/$1/gen/api
+	# $(_v)fdwarf $$< c $(BUILD)/$1/gen/api
 	$(_v)echo 'GEN_DIRS += api' >> $$@
 	$(_v)echo 'GEN_CFLAGS =' >> $$@
 	$(_v)echo 'GEN_LDFLAGS =' >> $$@

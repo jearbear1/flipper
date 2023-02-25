@@ -1,9 +1,9 @@
 # ARM target variables
 
-CC = llvm-gcc
-AS = llvm-gcc
-AR = llvm-ar
-LD = lld
+CC = clang
+AS = clang
+AR = arm-none-eabi-ar
+LD = arm-none-eabi-ld
 OBJCOPY = llvm-objcopy
 OBJDUMP = llvm-objdump
 
@@ -23,16 +23,16 @@ SRC_DIRS = platforms/atsam4s \
 CFLAGS = -mthumb \
 		     --target=thumbv7em-unknown-none-elf \
 		     -mfloat-abi=soft \
-		     -I/usr/local/Cellar/arm-gcc-bin/9-2019-q4-major/arm-none-eabi/include \
-		     -gdwarf-2
+		     -I/opt/homebrew/Cellar/arm-gcc-bin@12/12.2.Rel1/arm-none-eabi/include \
+		     -gdwarf-2 \
+			 -D__SAM4S16B__
 
-LDFLAGS = -L/usr/local/Cellar/arm-gcc-bin/9-2019-q4-major/arm-none-eabi/arm-none-eabi/lib/thumb/v7e-m+fp/softfp/ \
+LDFLAGS = -L/opt/homebrew/Cellar/arm-gcc-bin@12/12.2.Rel1/arm-none-eabi/lib/thumb/v7+fp/softfp \
 				  -lc \
 				  -lm \
-				  -L/usr/local/Cellar/arm-gcc-bin/9-2019-q4-major/arm-none-eabi/9.1.0/thumb/v7e-m+fp/softfp \
+				  -L/opt/homebrew/Cellar/arm-gcc-bin@12/12.2.Rel1/lib/gcc/arm-none-eabi/12.2.1/thumb/v7e-m+fp/softfp \
 				  -lgcc \
-				  -Tplatforms/atsam4s/config/sam4s16.ld \
-				  -no-enum-size-warning
+				  -Tplatforms/atsam4s/config/sam4s16.ld
 
 
 $(eval $(call ADD_TARGET,atsam4s))
