@@ -23,14 +23,14 @@ SRC_DIRS = platforms/atsam4s \
 CFLAGS = -mthumb \
 		     --target=thumbv7em-unknown-none-elf \
 		     -mfloat-abi=soft \
-		     -I/opt/homebrew/Cellar/arm-gcc-bin@12/12.2.Rel1/arm-none-eabi/include \
+		     -I/opt/homebrew/Cellar/arm-gcc-bin@10/10-2020-q4-major_1/arm-none-eabi/include \
 		     -gdwarf-2 \
 			 -D__SAM4S16B__
 
-LDFLAGS = -L/opt/homebrew/Cellar/arm-gcc-bin@12/12.2.Rel1/arm-none-eabi/lib/thumb/v7+fp/softfp \
+LDFLAGS = -L/opt/homebrew/Cellar/arm-gcc-bin@10/10-2020-q4-major_1/arm-none-eabi/lib/thumb/v7e-m+fp/softfp \
 				  -lc \
 				  -lm \
-				  -L/opt/homebrew/Cellar/arm-gcc-bin@12/12.2.Rel1/lib/gcc/arm-none-eabi/12.2.1/thumb/v7e-m+fp/softfp \
+				  -L/opt/homebrew/Cellar/arm-gcc-bin@10/10-2020-q4-major_1/arm-none-eabi/lib/thumb/v7e-m+fp/softfp \
 				  -lgcc \
 				  -Tplatforms/atsam4s/config/sam4s16.ld \
 				  -no-enum-size-warning
