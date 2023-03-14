@@ -7,6 +7,6 @@ CFLAGS = -I/usr/local/include
 LDFLAGS = -Wl,-T /usr/local/share/flipper/ram.ld \
            -Wl,-R /usr/local/share/flipper/platforms/atsam4s.elf \
 
-$(eval $(call ADD_TARGET,qux)
+$(eval $(call ADD_TARGET,qux))
 
 all:: $(BUILD)/qux/qux.elf
