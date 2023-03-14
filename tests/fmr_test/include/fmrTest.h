@@ -1,6 +1,7 @@
 #ifndef __fmrTest_h__
 #define __fmrTest_h__
 
+#include <stdio.h>
 #include <flipper.h>
 
 int my_lf_int8_argument_test(uint8_t a);

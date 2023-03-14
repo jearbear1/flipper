@@ -1,8 +1,8 @@
 #include <flipper.h>
-#include <fmrTest.h>
+#include "fmrTest.h"
 
 
-LF_FUNC my_lf_int8_argument_test(uint8_t a) {
+LF_FUNC int my_lf_int8_argument_test(uint8_t a) {
 
     if (a == 0x10 ) {
         printf("argument = %d",a);
@@ -13,7 +13,7 @@ LF_FUNC my_lf_int8_argument_test(uint8_t a) {
     }
 }
 
-LF_FUNC my_lf_int16_argument_test(uint16_t b) {
+LF_FUNC int my_lf_int16_argument_test(uint16_t b) {
 
      if (b == 0xECBD) {
         printf("argument = %d",b);
@@ -24,7 +24,7 @@ LF_FUNC my_lf_int16_argument_test(uint16_t b) {
     }
 }
 
-LF_FUNC my_lf_int32_argument_test(uint32_t c) {
+LF_FUNC int my_lf_int32_argument_test(uint32_t c) {
 
      if (c == 0xFFFFFFFF) {
         printf("argument = %d",c);
@@ -35,7 +35,7 @@ LF_FUNC my_lf_int32_argument_test(uint32_t c) {
     }
 }
 
-LF_FUNC my_lf_int_argument_test(uint32_t d) {
+LF_FUNC int my_lf_int_argument_test(uint32_t d) {
 
     if (d == 0xF7FBEF6F) {
         printf("argument = %d",d);
@@ -48,7 +48,7 @@ LF_FUNC my_lf_int_argument_test(uint32_t d) {
 }
 
 /*
-LF_FUNC my_lf_ptr32_argument_test(uint32_t *e) {
+LF_FUNC void my_lf_ptr32_argument_test(uint32_t *e) {
     if (*e ==  ) {
         return lf_success;
     } else {
@@ -58,7 +58,7 @@ LF_FUNC my_lf_ptr32_argument_test(uint32_t *e) {
 */
 
 /*
-LF_FUNC my_lf_ptr64_argument_test(uint64_t *f) {
+LF_FUNC void my_lf_ptr64_argument_test(uint64_t *f) {
   if (*f ==  ) {
         return lf_success;
     } else {
@@ -67,7 +67,7 @@ LF_FUNC my_lf_ptr64_argument_test(uint64_t *f) {
 }
 */
 
-LF_FUNC my_lf_int64_argument_test(u_int64_t g) {
+LF_FUNC int my_lf_int64_argument_test(u_int64_t g) {
 
     if (g == 0x17FFFFFFE) {
         printf("argument = %d",g);
@@ -79,7 +79,7 @@ LF_FUNC my_lf_int64_argument_test(u_int64_t g) {
 
 }
 
-LF_FUNC my_lf_int8_result_test(uint8_t h) {
+LF_FUNC int my_lf_int8_result_test(uint8_t h) {
 
     if (h ==  0x10) {
         return h;
@@ -88,7 +88,7 @@ LF_FUNC my_lf_int8_result_test(uint8_t h) {
     }
 }
 
-LF_FUNC my_lf_int16_result_test(uint16_t i){
+LF_FUNC int my_lf_int16_result_test(uint16_t i){
 
      if (i ==  0xECBD) {
         return i;
@@ -97,7 +97,7 @@ LF_FUNC my_lf_int16_result_test(uint16_t i){
     }
 }
 
-LF_FUNC my_lf_int32_result_test(uint32_t j) {
+LF_FUNC int my_lf_int32_result_test(uint32_t j) {
 
    if (j ==  0xFFFFFFFF) {
         return j;
@@ -107,7 +107,7 @@ LF_FUNC my_lf_int32_result_test(uint32_t j) {
 
 }
 
-LF_FUNC my_lf_int_result_test(_uint32_t k) {
+LF_FUNC int my_lf_int_result_test(uint32_t k) {
 
     if (k ==  0xF7FBEF6F) {
         return k;
@@ -117,11 +117,11 @@ LF_FUNC my_lf_int_result_test(_uint32_t k) {
 }
 
 /*
-LF_FUNC my_lf_ptr32_result_test(_uint32_t *l)
-my_lf_ptr64_result_test(_uint64_t *m);
+LF_FUNC void my_lf_ptr32_result_test(_uint32_t *l)
+LF_FUNC void my_lf_ptr64_result_test(_uint64_t *m);
 */
 
-LF_FUNC my_lf_int64_result_test(u_int64_t n) { 
+LF_FUNC int my_lf_int64_result_test(u_int64_t n) { 
 
     if (n == 0x17FFFFFFE) {
         return n;
