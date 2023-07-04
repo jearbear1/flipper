@@ -108,7 +108,7 @@ uint32_t dacc_set_timing(Dacc *p_dacc, uint32_t ul_startup,
 		uint32_t ul_clock_divider);
 #endif
 
-#if (SAM4E)
+#if (SAM4E || SAM4S)
 uint32_t dacc_set_timing(Dacc *p_dacc, 
 		uint32_t ul_maxs,uint32_t ul_startup);
 #endif
@@ -124,7 +124,7 @@ uint32_t dacc_set_power_save(Dacc *p_dacc, uint32_t ul_sleep_mode,
 		uint32_t ul_fast_wakeup_mode);
 #endif
 
-#if !(SAMV70 || SAMV71 || SAME70 || SAMS70 || SAM4E)
+#if !(SAMV70 || SAMV71 || SAME70 || SAMS70 || SAM4E || SAM4S)
 uint32_t dacc_set_timing(Dacc *p_dacc, uint32_t ul_refresh, uint32_t ul_maxs,
 		uint32_t ul_startup);
 #endif

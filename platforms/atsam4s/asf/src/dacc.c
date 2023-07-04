@@ -476,7 +476,7 @@ uint32_t dacc_set_power_save(Dacc *p_dacc,
 }
 #endif /* (SAM3S) || (SAM3XA) */
 
-#if !(SAMV70 || SAMV71 || SAME70 || SAMS70 || SAM4E)
+#if !(SAMV70 || SAMV71 || SAME70 || SAMS70 || SAM4E || SAM4S)
 /**
  * \brief Set DACC timings.
  *
@@ -505,7 +505,7 @@ uint32_t dacc_set_timing(Dacc *p_dacc,
 }
 #endif
 
-#if (SAM4E)
+#if (SAM4E || SAM4S)
 /**
  * \brief Set DACC timings.
  *
@@ -519,7 +519,7 @@ uint32_t dacc_set_timing(Dacc *p_dacc,
 		 uint32_t ul_maxs, uint32_t ul_startup)
 {
 	uint32_t mr = p_dacc->DACC_MR
-	& (~(DACC_MR_REFRESH_Msk | DACC_MR_STARTUP_Msk));
+	& (~DACC_MR_STARTUP_Msk);
 	if (ul_maxs) {
 		mr |= DACC_MR_MAXS;
 		} else {
