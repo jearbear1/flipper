@@ -3,7 +3,10 @@
         {
             "name": "Mac",
             "includePath": [
-                "/Users/jeremiahonwubuya/flipper/**"
+                "/Users/jeremiahonwubuya/flipper/**",
+                "${workspaceFolder}/platforms/atsam4s/asf/src",
+                "/usr/local/include/flipper/atsam4s/asf",
+                "${workspaceFolder}/platforms/atsam4s/asf/include"
             ],
             "defines": [],
             "macFrameworkPath": [
