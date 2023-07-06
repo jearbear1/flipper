@@ -4,8 +4,8 @@ CC = avr-gcc
 AS = avr-gcc
 AR = avr-ar
 LD = avr-ld
-OBJCOPY = llvm-objcopy
-OBJDUMP = llvm-objdump
+OBJCOPY = avr-objcopy
+OBJDUMP = avr-objdump
 
 GEN = git.mk api.mk
 
@@ -13,7 +13,7 @@ GEN = git.mk api.mk
 INC_DIRS = platforms/atmegau2/include \
 			os/include \
 			lib \
-			/opt/homebrew/Cellar/avr-gcc@11/11.3.0_1/avr/include 
+			/opt/homebrew/Cellar/avr-gcc@12/12.2.0_2/avr/include
 
 SRC_DIRS = platforms/atmegau2 \
 			os/arch/avr8 \
@@ -28,11 +28,11 @@ CFLAGS	=   -mmcu=atmega32u2 \
 # WARNING: This is very platform/installation specific. Need to replace this.
 LDFLAGS = -mavr35 \
 			-Tdata 0x800100 \
-			-L/opt/homebrew/Cellar/avr-gcc@11/11.3.0_1/avr/lib/avr35 \
+			-L/opt/homebrew/Cellar/avr-gcc@12/12.2.0_2/avr/lib/avr35 \
 			-lc \
 			-lm \
-			/opt/homebrew/Cellar/avr-gcc@11/11.3.0_1/avr/lib/avr35/crtatmega32u2.o \
-			-L/opt/homebrew/Cellar/avr-gcc@11/11.3.0_1/lib/avr-gcc/11/gcc/avr/11.3.0/avr35 \
+			/opt/homebrew/Cellar/avr-gcc@12/12.2.0_2/avr/lib/avr35/crtatmega32u2.o \
+			-L/opt/homebrew/Cellar/avr-gcc@12/12.2.0_2/lib/avr-gcc/12/gcc/avr/12.2.0/avr35 \
 			-lgcc \
 			--gc-sections
 
