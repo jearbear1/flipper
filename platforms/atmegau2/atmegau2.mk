@@ -4,8 +4,8 @@ CC = avr-gcc
 AS = avr-gcc
 AR = avr-ar
 LD = avr-ld
-OBJCOPY = llvm-objcopy
-OBJDUMP = llvm-objdump
+OBJCOPY = avr-objcopy
+OBJDUMP = avr-objdump
 
 GEN = git.mk api.mk
 
