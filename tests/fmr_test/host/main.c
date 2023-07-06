@@ -46,9 +46,6 @@ int main(int argc, char *argv[]) {
     my_lf_int64_result_test(u_int64_t n);
     */
 
-
-
-
     return lf_success;
 
 }
