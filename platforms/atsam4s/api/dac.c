@@ -12,6 +12,18 @@ int dac_write(void);
 int dac_cleanup(void);
 
 
+/*
+he default clock configuration (found in “conf_clock.h”) gives 
+a master clock (MCK) frequency of 120 MHz.
+The frequency of the peripheral clock is equal to that of MCK
+and the frequency of the clock that drives the DAC circuitry ( the “DAC clock”)
+is the peripheral-clock frequency divided by two. 
+Thus, the default configuration leaves us with fDAC_clock = 60 MHz.
+The maximum DAC-clock frequency is 50 MH
+*/
+
+
+
 LF_FUNC int dac_configure(void) {
 
     // 12 bit DAC
