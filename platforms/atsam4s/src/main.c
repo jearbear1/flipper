@@ -1,8 +1,11 @@
 #include "libflipper.h"
 #include <atsam4s.h>
 #include "os/scheduler.h"
+#include <uart.h>
 
-/* How many clock cycles to wait before giving up initialization. */
+
+
+// How many clock cycles to wait before giving up initialization. 
 #define CLOCK_TIMEOUT 5000
 
 static struct _fmr_packet packet;
@@ -26,7 +29,7 @@ void os_kernel_task(void) {
     }
 }
 
-/* Use the uart0 bus as the read/write endpoint. */
+// Use the uart0 bus as the read/write endpoint.
 
 int atsam4s_read(struct _lf_device *device, uint8_t *dst, uint32_t length) {
     return uart0_read(dst, length);
@@ -42,20 +45,20 @@ void atsam4s_release(void *device) {
 
 int main(void) {
 
-    /* Disable the watchdog timer. */
+    // Disable the watchdog timer.
     WDT->WDT_MR = WDT_MR_WDDIS;
 
-    /* Configure the EFC for 5 wait states. */
+    // Configure the EFC for 5 wait states. 
     EFC0->EEFC_FMR = EEFC_FMR_FWS(PLATFORM_WAIT_STATES);
 
-    /* Configure the primary clock source. */
+    // Configure the primary clock source. 
     if (!(PMC->CKGR_MOR & CKGR_MOR_MOSCSEL)) {
         PMC->CKGR_MOR = CKGR_MOR_KEY_PASSWD | BOARD_OSCOUNT | CKGR_MOR_MOSCRCEN | CKGR_MOR_MOSCXTEN;
         for (uint32_t timeout = 0; !(PMC->PMC_SR & PMC_SR_MOSCXTS) && (timeout++ < CLOCK_TIMEOUT);)
             ;
     }
 
-    /* Select external 20MHz oscillator. */
+    // Select external 20MHz oscillator. 
     PMC->CKGR_MOR = CKGR_MOR_KEY_PASSWD | BOARD_OSCOUNT | CKGR_MOR_MOSCRCEN | CKGR_MOR_MOSCXTEN | CKGR_MOR_MOSCSEL;
     for (uint32_t timeout = 0; !(PMC->PMC_SR & PMC_SR_MOSCSELS) && (timeout++ < CLOCK_TIMEOUT);)
         ;
@@ -63,12 +66,12 @@ int main(void) {
     for (uint32_t timeout = 0; !(PMC->PMC_SR & PMC_SR_MCKRDY) && (timeout++ < CLOCK_TIMEOUT);)
         ;
 
-    /* Configure PLLB as the master clock PLL. */
+    // Configure PLLB as the master clock PLL. 
     PMC->CKGR_PLLBR = BOARD_PLLBR;
     for (uint32_t timeout = 0; !(PMC->PMC_SR & PMC_SR_LOCKB) && (timeout++ < CLOCK_TIMEOUT);)
         ;
 
-    /* Switch to the main clock. */
+    // Switch to the main clock. 
     PMC->PMC_MCKR = (BOARD_MCKR & ~PMC_MCKR_CSS_Msk) | PMC_MCKR_CSS_MAIN_CLK;
     for (uint32_t timeout = 0; !(PMC->PMC_SR & PMC_SR_MCKRDY) && (timeout++ < CLOCK_TIMEOUT);)
         ;
@@ -76,12 +79,12 @@ int main(void) {
     for (uint32_t timeout = 0; !(PMC->PMC_SR & PMC_SR_MCKRDY) && (timeout++ < CLOCK_TIMEOUT);)
         ;
 
-    /* Allow the reset pin to reset the device. */
+    // Allow the reset pin to reset the device. 
     RSTC->RSTC_MR = RSTC_MR_KEY_PASSWD | RSTC_MR_URSTEN;
 
     _4s = lf_device_create(atsam4s_read, atsam4s_write, atsam4s_release);
     
-    /* peripheral configuration */
+    // peripheral configuration 
 
     // extern struct _lf_module _adc_module;
     // dyld_register(_4s, &_adc_module);
@@ -147,16 +150,16 @@ int main(void) {
     // dyld_register(_4s, &_wdt_module);
     // wdt_configure();
 
-    /* Enable the FSI pin. */
-    gpio_enable(SAM_FMR_PIN, 0);
-    gpio_write(0, SAM_FMR_PIN);
+    // Enable the FSI pin. 
+    // gpio_enable(SAM_FMR_PIN, 0);
+    // gpio_write(0, SAM_FMR_PIN);
 
-    /* Pull an FMR packet asynchronously to launch FMR. */
+    // Pull an FMR packet asynchronously to launch FMR. 
     uart0_read(&packet, sizeof(struct _fmr_packet));
-    /* Enable the PDC receive complete interrupt. */
+    // Enable the PDC receive complete interrupt. 
     UART0->UART_IER = UART_IER_ENDRX;
 
-    /* Launch the kernel task. */
+    // Launch the kernel task. 
     os_scheduler_init();
 }
 
@@ -166,9 +169,9 @@ void uart0_isr(void) {
 
     uint32_t _sr = UART0->UART_SR;
 
-    /* If an entire packet has been received, process it. */
+    // If an entire packet has been received, process it. 
     if (_sr & UART_SR_ENDRX) {
-        /* set fmr low (active) */
+        // set fmr low (active) 
         gpio_write(0, SAM_FMR_PIN);
 
         UART0->UART_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS;
@@ -176,13 +179,13 @@ void uart0_isr(void) {
         lf_error_set(E_OK);
         fmr_perform(_4s, &packet);
 
-        /* Pull an FMR packet asynchronously to launch FMR. */
+        // Pull an FMR packet asynchronously to launch FMR. 
         uart0_read(&packet, sizeof(struct _fmr_packet));
 
-        /* Wait a bit before raising the FMR pin. */
+        // Wait a bit before raising the FMR pin. 
         for (size_t i = 0; i < 0x3FF; i++) __asm__ __volatile__("nop");
 
-        /* set fmr high (inactive) */
+        // set fmr high (inactive) 
         gpio_write(SAM_FMR_PIN, 0);
     } else {
         UART0->UART_CR = UART_CR_RSTSTA;
@@ -192,17 +195,17 @@ void uart0_isr(void) {
 }
 
 void uart0_pull_wait(void *dst, uint32_t length) {
-    /* Disable the PDC receive complete interrupt. */
+    // Disable the PDC receive complete interrupt. 
     UART0->UART_IDR = UART_IDR_ENDRX;
-    /* Set the transmission length and destination pointer. */
+    // Set the transmission length and destination pointer. 
     UART0->UART_RCR = length;
     UART0->UART_RPR = (uintptr_t)dst;
-    /* Enable the receiver. */
+    // Enable the receiver. 
     UART0->UART_PTCR = UART_PTCR_RXTEN;
-    /* Wait until the transfer has finished. */
+    // Wait until the transfer has finished. 
     while (!(UART0->UART_SR & UART_SR_ENDRX)) {}
-    /* Disable the PDC receiver. */
+    // Disable the PDC receiver. 
     UART0->UART_PTCR = UART_PTCR_RXTDIS;
-    /* Enable the PDC receive complete interrupt. */
+    // Enable the PDC receive complete interrupt. 
     UART0->UART_IER = UART_IER_ENDRX;
 }
