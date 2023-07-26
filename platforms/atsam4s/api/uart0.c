@@ -4,177 +4,21 @@
 #include <pmc.h> 
 #include <uart.h> 
 
-
 int uart0_configure(void);
-int uart0_setbaud(uint32_t baud);
 int uart0_reset(void);
 int uart0_ready(void);
 int uart0_enable(void); 
 int uart0_disable(void);
-void uart0_put(uint8_t byte);
 uint8_t uart0_get(void); 
-int uart0_write(void *src, uint32_t length);
-int uart0_read(void *dst, uint32_t length);
+int uart0_write(void);
+int uart0_read(void);
+int uart0_get_uart_interrupt_mask(void);
+const uint8_t uc_data;
+uint8_t *puc_data;
+int changeBaudRate(int);
+int changeMode(int);
 
 /*
-int uart_configure(int);
-int reset_uart(int);
-int reset_uart_rx(int);
-int reset_uart_tx(int);
-int uart_cleanup(int);
-int get_uart_status(int);
-int is_uart_rx_ready(int);
-int is_uart_tx_ready(int);
-int uart_read_data(int, int);
-int uart_write_data(int, int);
-
-
-LF_FUNC int uart_configure(int i) {
-
-    } else if (i == 1) {
-        // Enable the Peripheral clock 
-        // UART1 Peripheral ID = 9 
-        pmc_enable_periph_clk(ID_UART1);
-        // Enable UART receiver and transmitter.
-        uart_enable(UART1);
-        // UART1_IRQn = 9
-        uart_enable_interrupt(UART1, UART1_IRQn);
-
-        // Enable UART receiver.
-        uart_enable_rx(UART1);
-        // Enable UART transmitter.
-        uart_enable_tx(UART1);
-        return lf_success;
-        
-    } else {
-        return lf_error;
-    }
-
-}
-
-LF_FUNC int reset_uart(int i) {
-
-   if (i == 1) {
-        uart_reset(UART1);
-        uart_reset_status(UART1);
-         return lf_success;
-
-    } else {
-        return lf_error;
-    }
-}
-
-LF_FUNC int reset_uart_rx(int i) {
-
-    if (i == 1) {
-        uart_reset_rx(UART1);
-        return lf_success; 
-    } else {
-        return lf_error;
-    }
-
-}
-LF_FUNC int reset_uart_tx(int i) {
-     if (i == 1) {
-        reset_uart_tx(UART1);
-        return lf_success; 
-    } else {
-        return lf_error;
-    }
-
-}
-
-
-LF_FUNC int uart_cleanup(int i) {
-     (i == 1) {
-        // Enable UART receiver and transmitter.
-        uart_disable(UART1);
-        // UART1_IRQn = 9
-        uart_disable_interrupt(UART1, UART1_IRQn);
-
-        // Enable UART receiver.
-        uart_disable_rx(UART1);
-        // Enable UART transmitter.
-        uart_disable_tx(UART1);
-        return lf_success;
-            
-    } else {
-        return lf_error;
-    }
-
-}
-
-LF_FUNC get_uart_status(int i) {
-    if (i == 1) {
-        uart_get_status(UART1);
-        return lf_success;
-    } else {
-        return lf_error;
-    }
-}
-
-LF_FUNC int is_uart_rx_ready(int i) {
-    if (i == 1) {
-        uart_is_rx_ready(UART1);
-        return lf_success;
-    } else {
-        return lf_error;
-    }
-}
-LF_FUNC int is_uart_tx_ready(int i) {
-     if (i == 1) {
-         uart_is_tx_ready(UART1);
-        return lf_success;
-    } else {
-        return lf_error;
-    }
-}
-
-LF_FUNC uart_read_data(int i, int puc_data) {
-     if (i == 1) {
-        if (uart_is_rx_ready(UART1) == 1) {
-        uart_read(UART0, puc_data);
-        }
-     } else {
-        return lf_error;
-     }
-}
-
-
-LF_FUNC uart_write_data(int i, int uc_data) {
-    if (i == 1) {
-        if (uart_is_tx_empty(UART1) == 1) {
-            uart_write(UART0, uc_data);
-        }
-     } else {
-        return lf_error;
-     }
-}
-
-*/
-
-
-
-LF_FUNC int uart0_configure(void) {
-
-    // Enable the Peripheral clock 
-    // UART0 Peripheral ID = 8 
-    pmc_enable_periph_clk(ID_UART0);
-
-    // UART0_IRQn = 8
-    uart_enable_interrupt(UART0, UART0_IRQn);
-
-    // Enable UART receiver.
-    uart_enable_rx(UART0);
-    // Enable UART transmitter.
-    uart_enable_tx(UART0);
-
-    return lf_success;
-}
-
-/*
-
-LF_FUNC int uart0_setbaud(uint32_t baud) {
     
 The baud rate clock is the peripheral clock divided by 16 times the clock divisor (CD)
 value written in the Baud Rate Generator register (UART_BRGR). 
@@ -182,21 +26,42 @@ If UART_BRGR is set to 0, the baud rate clock is disabled and the UART remains i
 The maximum allowable baud rate is peripheral clock divided by 16. 
 The minimum allowable baud rate is peripheral clock divided by (16 x 65536).
 
-    return lf_success;
-}
+The Automatic echo mode allows a bit-by-bit retransmission. 
+When a bit is received on the URXD line, it is sent to the UTXD line.
+The transmitter operates normally, but has no effect on the UTXD line.
 
+The Local loopback mode allows the transmitted characters to be received. 
+UTXD and URXD pins are not used and the output of the transmitter is internally connected to the input of the receiver. 
+The URXD pin level has no effect and the UTXD line is held high, as in idle state.
+
+The Remote loopback mode directly connects the URXD pin to the UTXD line. 
+The transmitter and the receiver are disabled and have no effect. 
+This mode allows a bit-by-bit retransmission.
+
+0: Normal mode
+1: Automatic echo
+2: Local loopback
+3: Remote loopback
 */
 
-LF_FUNC int uart0_reset(void) {
-    // reset transmitter receiver and uart status
-    uart_reset_status(UART0);
-    uart_reset(UART0);
-    return lf_success;
-}
+sam_uart_opt_t uart0_opt;
 
-LF_FUNC int uart0_ready(void) {
-    uart_is_rx_ready(UART0);
-    uart_is_tx_ready(UART0);
+LF_FUNC int uart0_configure(void) {
+
+    // Enable the Peripheral clock 
+    // UART0 Peripheral ID = 8 
+    pmc_enable_periph_clk(ID_UART0);
+
+    // configure uart options struct
+    // 120 MHz Master Clock, 9600 Baudrate, Normal Mode
+    uart0_opt.ul_mck = 120;
+    uart0_opt.ul_baudrate = 9600;
+    uart0_opt.ul_mode = 0;
+
+    uart_init(UART0, &uart0_opt);
+    // UART0_IRQn = 8
+    uart_enable_interrupt(UART0, UART0_IRQn);
+
     return lf_success;
 }
 
@@ -220,8 +85,17 @@ LF_FUNC int uart0_disable(void) {
      return lf_success;
 }
 
-LF_FUNC void uart0_put(uint8_t byte) {
+LF_FUNC int uart0_reset(void) {
+    // reset transmitter receiver and uart status
+    uart_reset_status(UART0);
+    uart_reset(UART0);
+    return lf_success;
+}
 
+LF_FUNC int uart0_ready(void) {
+    uart_is_rx_ready(UART0);
+    uart_is_tx_ready(UART0);
+    return lf_success;
 }
 
 LF_FUNC uint8_t uart0_get(void) {
@@ -230,19 +104,57 @@ LF_FUNC uint8_t uart0_get(void) {
     return lf_success;
 }
 
-LF_FUNC int uart0_write(void *src, uint32_t length) {
-    if (uart_is_tx_empty(UART0) == 1) {
-        uart_write(UART0, length);
+LF_FUNC int uart0_write(void) {
+    uart_write(UART0, uc_data);
+    return lf_success;
+}
+
+LF_FUNC int uart0_read(void) {
+    uart_read(UART0, puc_data);
+    return lf_success;
+}
+
+
+LF_FUNC int uart0_get_uart_interrupt_mask(void) { 
+    uart_get_interrupt_mask(UART0);
+    return lf_success;
+}
+
+LF_FUNC int changeBaudRate(int x) {
+    /*
+    if:
+        (x > peripheral clock divided by (16 x 65536)
+        &&
+        (x < peripheral clock divided by 16 )
+        then 
+        uart0_opt.ul_baudrate = x;
+        return lf_success;
+    */
+    return lf_success;
+}
+
+LF_FUNC int changeMode(int x) {
+
+    if (x == 0) {
+        uart0_opt.ul_mode = 0;
+        return lf_success;
+    } else if (x == 1) {
+        uart0_opt.ul_mode = 1;
+        return lf_success;
+    } else if (x == 2) {
+        uart0_opt.ul_mode = 2;
+        return lf_success;
+    } else if (x == 3) {
+        uart0_opt.ul_mode = 3;
+        return lf_success;
+    } else {
+        return lf_error; 
     }
+
     return lf_success;
 }
 
-LF_FUNC int uart0_read(void *dst, uint32_t length) {
-    uart_read(UART0, length);
-    return lf_success;
+// DO NOT DELETE THIS FUNCTION
+LF_FUNC void uart0_put(uint8_t byte) {
 }
 
-/*
-uart_get_interrupt_mask
-uart_set_clock_divisor 
-*/
