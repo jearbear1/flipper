@@ -1,5 +1,9 @@
 #include "libflipper.h"
 
+
+int gpio_enable(unsigned long long x, int y);
+int gpio_write(unsigned long long x, int y);
+
 LF_FUNC int gpio_configure(void) {
     return lf_success;
 }

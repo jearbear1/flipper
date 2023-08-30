@@ -1,6 +1,9 @@
 #include "libflipper.h"
 #include <uart.h>
 
+int uart0_write(void *src, uint32_t length);
+int uart0_read(void *dst, uint32_t length);
+
 LF_FUNC int uart0_configure(void) {
 
     return lf_success;

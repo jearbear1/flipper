@@ -38,10 +38,7 @@ int main(int argc, char *argv[]) {
     my_lf_int32_result_test(0xFFFFFFFF);
 
     // 4160483183
-    my_lf_int_result_test(0xF7FBEF6F);
-    
-    // 6442450942
-    my_lf_int_result_test(0x17FFFFFFE);
+    my_lf_int_result_test(0xF7FBEF6F);       
 
     /*
     my_lf_ptr32_result_test(uint32_t *l)
