@@ -3,8 +3,8 @@
 
 int main(int argc, char *argv[]) {
 
-    // flipper_attach();
-    struct _lf_device *fvm = flipper_attach_network("localhost");
+    flipper_attach();
+    //struct _lf_device *fvm = flipper_attach_network("localhost");
 
     // 16
     my_lf_int8_argument_test(0x10);
@@ -39,15 +39,14 @@ int main(int argc, char *argv[]) {
 
     // 4160483183
     my_lf_int_result_test(0xF7FBEF6F);
+    
+    // 6442450942
+    my_lf_int_result_test(0x17FFFFFFE);
 
     /*
     my_lf_ptr32_result_test(uint32_t *l)
     my_lf_ptr64_result_test(u_int64_t *m);
-    my_lf_int64_result_test(u_int64_t n);
     */
-
-
-
 
     return lf_success;
 
