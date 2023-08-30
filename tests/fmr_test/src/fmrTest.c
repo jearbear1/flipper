@@ -67,10 +67,10 @@ LF_FUNC void my_lf_ptr64_argument_test(uint64_t *f) {
 }
 */
 
-LF_FUNC int my_lf_int64_argument_test(u_int64_t g) {
+LF_FUNC int my_lf_int64_argument_test(uint64_t g) {
 
     if (g == 0x17FFFFFFE) {
-        printf("argument = %d",g);
+        printf("argument = %llu",g);
         return lf_success;
     } else {
         printf("argument is not of type uint64");
