@@ -191,9 +191,11 @@ static inline void pll_enable_source(enum pll_source e_src)
 	case PLL_SRC_MAINCK_8M_RC:
 	case PLL_SRC_MAINCK_12M_RC:
 	case PLL_SRC_MAINCK_XTAL:
+	/*
 	case PLL_SRC_MAINCK_BYPASS:
 		osc_enable(e_src);
 		osc_wait_ready(e_src);
+	*/
 		break;
 
 	default:
