@@ -1,23 +1,37 @@
 #include "libflipper.h"
+#include "atsam4s.h"
 #include "sam4s16b.h"
 #include <sysclk.h> 
+#include <conf_clock.h>
 #include <pmc.h> 
 #include <uart.h> 
+
+const uint8_t uc_data;
+uint8_t *puc_data;
+int changeBaudRate(int x, int y);
+int changeMode(int x, int y);
 
 int uart0_configure(void);
 int uart0_reset(void);
 int uart0_ready(void);
 int uart0_enable(void); 
 int uart0_disable(void);
+void uart0_put(uint8_t byte);
 uint8_t uart0_get(void); 
-int uart0_write(void);
-int uart0_read(void);
+int uart0_write(const uint8_t uc_data);
+int uart0_read(uint8_t *puc_data);
 int uart0_get_uart_interrupt_mask(void);
-const uint8_t uc_data;
-uint8_t *puc_data;
-int changeBaudRate(int);
-int changeMode(int);
 
+int uart1_configure(void);
+int uart1_reset(void);
+int uart1_ready(void);
+int uart1_enable(void); 
+int uart1_disable(void);
+void uart1_put(uint8_t byte);
+uint8_t uart1_get(void); 
+int uart1_write(const uint8_t uc_data);
+int uart1_read(uint8_t *puc_data);
+int uart1_get_uart_interrupt_mask(void);
 /*
     
 The baud rate clock is the peripheral clock divided by 16 times the clock divisor (CD)
@@ -45,23 +59,23 @@ This mode allows a bit-by-bit retransmission.
 */
 
 sam_uart_opt_t uart0_opt;
+sam_uart_opt_t uart1_opt;
 
 LF_FUNC int uart0_configure(void) {
 
     // Enable the Peripheral clock 
     // UART0 Peripheral ID = 8 
     pmc_enable_periph_clk(ID_UART0);
-
+ 
     // configure uart options struct
-    // 120 MHz Master Clock, 9600 Baudrate, Normal Mode
-    uart0_opt.ul_mck = 120;
-    uart0_opt.ul_baudrate = 9600;
+    // 96 MHz Master Clock, 1000000 Baudrate, Normal Mode
+    uart0_opt.ul_mck = F_CPU;
+    uart0_opt.ul_baudrate = PLATFORM_BAUDRATE;
     uart0_opt.ul_mode = 0;
 
     uart_init(UART0, &uart0_opt);
     // UART0_IRQn = 8
     uart_enable_interrupt(UART0, UART0_IRQn);
-
     return lf_success;
 }
 
@@ -81,7 +95,6 @@ LF_FUNC int uart0_disable(void) {
     uart_disable_interrupt(UART0, UART0_IRQn);
     // Disable UART Peripheral
     uart_disable(UART0);
-   
      return lf_success;
 }
 
@@ -104,12 +117,12 @@ LF_FUNC uint8_t uart0_get(void) {
     return lf_success;
 }
 
-LF_FUNC int uart0_write(void) {
+LF_FUNC int uart0_write(const uint8_t uc_data) {
     uart_write(UART0, uc_data);
     return lf_success;
 }
 
-LF_FUNC int uart0_read(void) {
+LF_FUNC int uart0_read(uint8_t *puc_data) {
     uart_read(UART0, puc_data);
     return lf_success;
 }
@@ -120,41 +133,136 @@ LF_FUNC int uart0_get_uart_interrupt_mask(void) {
     return lf_success;
 }
 
-LF_FUNC int changeBaudRate(int x) {
+LF_FUNC int changeBaudRate(int x, int y) {
     /*
-    if:
-        (x > peripheral clock divided by (16 x 65536)
-        &&
-        (x < peripheral clock divided by 16 )
-        then 
-        uart0_opt.ul_baudrate = x;
-        return lf_success;
+    if (x == 0) {
+        if ((y > peripheral clock / (16 x 65536)) && (y < peripheral clock / 16 )) {
+            uart0_opt.ul_baudrate = x;
+            return lf_success;
+        }
+    } else if (x == 1) {
+        if ((y > peripheral clock / (16 x 65536)) && (y < peripheral clock / 16 )) {
+            uart1_opt.ul_baudrate = x;
+            return lf_success;
+        }
+    } else {
+        return lf_error;
+    }
     */
     return lf_success;
 }
 
-LF_FUNC int changeMode(int x) {
-
-    if (x == 0) {
+LF_FUNC int changeMode(int x, int y) {
+ 
+    if ((x == 0) && (y == 0)) {
+        // 0: Normal mode
         uart0_opt.ul_mode = 0;
         return lf_success;
-    } else if (x == 1) {
+    } else if ((x == 0) && (y == 1)) {
+        // 1: Automatic echo
         uart0_opt.ul_mode = 1;
         return lf_success;
-    } else if (x == 2) {
+    } else if ((x == 0) && (y == 2)) {
+        // 2: Local loopback
         uart0_opt.ul_mode = 2;
         return lf_success;
-    } else if (x == 3) {
+    } else if ((x == 0) && (y == 3)) {
+        // 3: Remote loopback
         uart0_opt.ul_mode = 3;
+        return lf_success;
+    } else if ((y == 0) && (y == 0)) {
+        // 0: Normal mode
+        uart1_opt.ul_mode = 0;
+        return lf_success;
+    } else if ((y == 0) && (y == 1)) {
+        // 1: Automatic echo
+        uart1_opt.ul_mode = 1;
+        return lf_success;
+    } else if ((y == 0) && (y == 2)) {
+        // 2: Local loopback
+        uart1_opt.ul_mode = 2;
+        return lf_success;
+    } else if ((y == 0) && (y == 3)) {
+        // 3: Remote loopback
+        uart1_opt.ul_mode = 3;
         return lf_success;
     } else {
         return lf_error; 
     }
-
-    return lf_success;
 }
 
 // DO NOT DELETE THIS FUNCTION
 LF_FUNC void uart0_put(uint8_t byte) {
 }
 
+LF_FUNC int uart1_configure(void) {
+
+    // Enable the Peripheral clock 
+    // UART1 Peripheral ID = 9 
+    pmc_enable_periph_clk(ID_UART1);
+ 
+    // configure uart options struct
+    // 96 MHz Master Clock, 1000000 Baudrate, Normal Mode
+    uart1_opt.ul_mck = F_CPU;
+    uart1_opt.ul_baudrate = PLATFORM_BAUDRATE;
+    uart1_opt.ul_mode = 0;
+
+    uart_init(UART1, &uart1_opt);
+    // UART0_IRQn = 9
+    uart_enable_interrupt(UART1, UART1_IRQn);
+    return lf_success;
+}
+
+LF_FUNC int uart1_enable(void) {
+    // Enable UART
+    uart_enable(UART1);
+    return lf_success;
+}
+
+LF_FUNC int uart1_disable(void) {
+
+    // Disable UART receiver.
+    uart_disable_rx(UART1);
+    // Disable UART transmitter.
+    uart_disable_tx(UART1);
+    // Disable UART Interrupt UART0_IRQn = 8
+    uart_disable_interrupt(UART1, UART1_IRQn);
+    // Disable UART Peripheral
+    uart_disable(UART1);
+     return lf_success;
+}
+
+LF_FUNC int uart1_reset(void) {
+    // reset transmitter receiver and uart status
+    uart_reset_status(UART1);
+    uart_reset(UART1);
+    return lf_success;
+}
+
+LF_FUNC int uart1_ready(void) {
+    uart_is_rx_ready(UART1);
+    uart_is_tx_ready(UART1);
+    return lf_success;
+}
+
+LF_FUNC uint8_t uart1_get(void) {
+    // get UART status
+    uart_get_status(UART1);
+    return lf_success;
+}
+
+LF_FUNC int uart1_write(const uint8_t uc_data) {
+    uart_write(UART1, uc_data);
+    return lf_success;
+}
+
+LF_FUNC int uart1_read(uint8_t *puc_data) {
+    uart_read(UART1, puc_data);
+    return lf_success;
+}
+
+
+LF_FUNC int uart1_get_uart_interrupt_mask(void) { 
+    uart_get_interrupt_mask(UART1);
+    return lf_success;
+}
