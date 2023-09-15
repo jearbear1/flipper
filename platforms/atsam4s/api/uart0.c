@@ -1,6 +1,14 @@
 #include "libflipper.h"
 #include <uart.h>
 
+const uint8_t uc_data;
+uint8_t *puc_data;
+
+int uart0_configure(void);
+int uart0_write(const uint8_t uc_data);
+int uart0_read(uint8_t *puc_data);
+
+
 LF_FUNC int uart0_configure(void) {
 
     return lf_success;
@@ -31,10 +39,10 @@ LF_FUNC uint8_t uart0_get(void) {
     return 0;
 }
 
-LF_FUNC int uart0_write(void *src, uint32_t length) {
+LF_FUNC int uart0_write(const uint8_t uc_data) {
     return lf_success;
 }
 
-LF_FUNC int uart0_read(void *dst, uint32_t length) {
+LF_FUNC int uart0_read(uint8_t *puc_data) {
     return lf_success;
 }
