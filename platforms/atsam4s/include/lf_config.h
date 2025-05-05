@@ -6,6 +6,8 @@
 
 /* define the flags needed to make libflipper work on this chip */
 #define ATSAM4S
+#ifndef __SAM4S16B__
 #define __SAM4S16B__
+#endif
 
 #endif

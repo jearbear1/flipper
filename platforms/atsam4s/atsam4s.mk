@@ -11,12 +11,14 @@ GEN = git.mk api.mk
 
 # Directories that need to be included for this target.
 INC_DIRS = os/include \
-		   platforms/atsam4s/include \
-		   platforms/atsam4s/asf/include \
-		   platforms/atsam4s/asf/src \
-		   lib
+           platforms/atsam4s/include \
+           platforms/atsam4s/asf/include \
+           platforms/atsam4s/asf/include/pio \
+           platforms/atsam4s/asf/src \
+           lib
 
 SRC_DIRS = platforms/atsam4s \
+		   platforms/atsam4s/api \
 		   os/arch/armv7 \
 		   lib
 
@@ -27,7 +29,7 @@ CFLAGS = -mthumb \
 		     -gdwarf-2 \
 			 -D__SAM4S16B__
 
-LDFLAGS = -L/opt/homebrew/Cellar/arm-gcc-bin@12/12.2.Rel1/arm-none-eabi/lib/thumb/v7e-m+fp/softfp \
+LDFLAGS = -L/opt/homebrew/Cellar/arm-gcc-bin@12/12.2.Rel1/arm-none-eabi/lib/thumb/v7+fp/softfp \
 				  -lc \
 				  -lm \
 				  -L/opt/homebrew/Cellar/arm-gcc-bin@12/12.2.Rel1/lib/gcc/arm-none-eabi/12.2.1/thumb/v7e-m+fp/softfp \
@@ -49,3 +51,4 @@ all:: atsam4s
 
 install-atsam4s: utils atsam4s $(BUILD)/atsam4s/atsam4s.bin
 	$(_v)$(BUILD)/fdfu/fdfu $(BUILD)/atsam4s/atsam4s.bin
+

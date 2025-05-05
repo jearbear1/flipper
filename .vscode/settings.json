@@ -2,6 +2,15 @@
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
         "sysclk.h": "c",
-        "pmc.h": "c"
+        "pmc.h": "c",
+        "atsam4s.h": "c",
+        "uart.h": "c",
+        "scheduler.h": "c",
+        "libflipper.h": "c",
+        "pio_sam4s16b.h": "c",
+        "sam4s16b.h": "c",
+        "ioport.h": "c",
+        "gpio.h": "c",
+        "spi.h": "c"
     }
 }

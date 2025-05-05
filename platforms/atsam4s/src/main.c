@@ -2,6 +2,8 @@
 #include <atsam4s.h>
 #include "os/scheduler.h"
 #include <uart.h>
+#include "gpio.h"
+#include "uart0.h"
 
 
 
@@ -19,7 +21,7 @@ int debug_putchar(char c, FILE *stream) {
 }
 
 void os_kernel_task(void) {
-    gpio_enable(IO_1, 0);
+    gpio_enable(PIOA, IO_1);
     while (1) {
         printf("Hello!\n");
         gpio_write(IO_1, 0);
@@ -31,16 +33,15 @@ void os_kernel_task(void) {
 
 // Use the uart0 bus as the read/write endpoint.
 
-int atsam4s_read(struct _lf_device *device, uint8_t *dst, uint32_t length) {
+int atsam4s_read(struct _lf_device *device, void *dst, uint32_t length)  {
     return uart0_read(dst, length);
 }
 
-int atsam4s_write(struct _lf_device *device, uint8_t *src, uint32_t length) {
+int atsam4s_write(struct _lf_device *device, void *src, uint32_t length) {
     return uart0_write(src, length);
 }
-
-void atsam4s_release(void *device) {
-    return;
+int atsam4s_release(void *device) {
+    return 0;
 }
 
 int main(void) {

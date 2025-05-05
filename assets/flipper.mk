@@ -148,3 +148,12 @@ clean::
 
 clean::
 	$(_v)rm -rf $(BUILD)
+
+# -------------------------------------------------------------------- #
+# Ensure gen/api is rebuilt if its dependencies change
+
+API_GEN_DEPS := $(wildcard $(FLIPPER_PATH)/platforms/$(PLATFORM)/ldscripts/*.ld)
+
+$(BUILD)/$(PLATFORM)/gen/api: $(API_GEN_DEPS)
+	$(_v)mkdir -p $@
+

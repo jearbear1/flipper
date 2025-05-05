@@ -93,6 +93,7 @@ typedef enum IRQn
   UART1_IRQn           =  9, /**<  9 SAM4S16B UART 1 (UART1) */
   PIOA_IRQn            = 11, /**< 11 SAM4S16B Parallel I/O Controller A (PIOA) */
   PIOB_IRQn            = 12, /**< 12 SAM4S16B Parallel I/O Controller B (PIOB) */
+  PIOC_IRQn            = 13,  /**< 13 SAM4S16B Parallel I/O Controller C (PIOC) */
   USART0_IRQn          = 14, /**< 14 SAM4S16B USART 0 (USART0) */
   USART1_IRQn          = 15, /**< 15 SAM4S16B USART 1 (USART1) */
   HSMCI_IRQn           = 18, /**< 18 SAM4S16B Multimedia Card Interface (HSMCI) */
@@ -149,6 +150,7 @@ typedef struct _DeviceVectors
   void* pvReserved10;
   void* pfnPIOA_Handler;   /* 11 Parallel I/O Controller A */
   void* pfnPIOB_Handler;   /* 12 Parallel I/O Controller B */
+  void* pfnPIOC_Handler;   /* 13 Parallel I/O Controller C */
   void* pvReserved13;
   void* pfnUSART0_Handler; /* 14 USART 0 */
   void* pfnUSART1_Handler; /* 15 USART 1 */
@@ -194,6 +196,7 @@ void EFC0_Handler       ( void );
 void HSMCI_Handler      ( void );
 void PIOA_Handler       ( void );
 void PIOB_Handler       ( void );
+void PIOC_Handler       ( void );
 void PMC_Handler        ( void );
 void PWM_Handler        ( void );
 void RSTC_Handler       ( void );
@@ -296,6 +299,7 @@ void WDT_Handler        ( void );
 #include "instance/instance_efc0.h"
 #include "instance/instance_pioa.h"
 #include "instance/instance_piob.h"
+#include "instance/instance_pioc.h"
 #include "instance/instance_rstc.h"
 #include "instance/instance_supc.h"
 #include "instance/instance_rtt.h"
@@ -321,6 +325,7 @@ void WDT_Handler        ( void );
 #define ID_UART1  ( 9) /**< \brief UART 1 (UART1) */
 #define ID_PIOA   (11) /**< \brief Parallel I/O Controller A (PIOA) */
 #define ID_PIOB   (12) /**< \brief Parallel I/O Controller B (PIOB) */
+#define ID_PIOC   (13) /**< \brief Parallel I/O Controller C (PIOC) */
 #define ID_USART0 (14) /**< \brief USART 0 (USART0) */
 #define ID_USART1 (15) /**< \brief USART 1 (USART1) */
 #define ID_HSMCI  (18) /**< \brief Multimedia Card Interface (HSMCI) */
@@ -383,6 +388,7 @@ void WDT_Handler        ( void );
 #define PIOA       (0x400E0E00U) /**< \brief (PIOA      ) Base Address */
 #define PDC_PIOA   (0x400E0F68U) /**< \brief (PDC_PIOA  ) Base Address */
 #define PIOB       (0x400E1000U) /**< \brief (PIOB      ) Base Address */
+#define PIOC       (0x400E1200U)  /**< \brief (PIOC      ) Base Address */
 #define RSTC       (0x400E1400U) /**< \brief (RSTC      ) Base Address */
 #define SUPC       (0x400E1410U) /**< \brief (SUPC      ) Base Address */
 #define RTT        (0x400E1430U) /**< \brief (RTT       ) Base Address */
@@ -425,6 +431,7 @@ void WDT_Handler        ( void );
 #define PIOA       ((Pio    *)0x400E0E00U) /**< \brief (PIOA      ) Base Address */
 #define PDC_PIOA   ((Pdc    *)0x400E0F68U) /**< \brief (PDC_PIOA  ) Base Address */
 #define PIOB       ((Pio    *)0x400E1000U) /**< \brief (PIOB      ) Base Address */
+#define PIOC       ((Pio    *)0x400E1200U) /**< \brief (PIOC      ) Base Address */
 #define RSTC       ((Rstc   *)0x400E1400U) /**< \brief (RSTC      ) Base Address */
 #define SUPC       ((Supc   *)0x400E1410U) /**< \brief (SUPC      ) Base Address */
 #define RTT        ((Rtt    *)0x400E1430U) /**< \brief (RTT       ) Base Address */

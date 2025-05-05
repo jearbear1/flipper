@@ -1,7 +1,7 @@
 include assets/flipper.mk
 
 # Prefix where build products are installed
-PREFIX ?= /usr/local
+PREFIX ?= /opt
 
 help::
 	@echo \
