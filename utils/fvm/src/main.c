@@ -45,6 +45,7 @@ int main(int argc, char *argv[]) {
 
     printf("Flipper Virtual Machine (FVM) v0.1.0\nListening on 'localhost'.\n\n");
 
+    /*
     dyld_register(fvm, &_adc_module);
     adc_configure();
 
@@ -93,6 +94,7 @@ int main(int argc, char *argv[]) {
     dyld_register(fvm, &_wdt_module);
     wdt_configure();
 
+    */
     if (argc > 1) {
 
         char *lib = argv[1];
