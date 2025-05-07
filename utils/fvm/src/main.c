@@ -6,6 +6,8 @@
 #include <flipper/platforms/posix/network.h>
 #include <dlfcn.h>
 
+#include "dac.h"
+
 /* fvm - Creates a local server that acts as a virtual flipper device. */
 
 int main(int argc, char *argv[]) {
@@ -53,6 +55,10 @@ int main(int argc, char *argv[]) {
     button_configure();
     */
 
+    struct _lf_module _dac_module = {
+        .name = "dac",
+    };
+    
     dyld_register(fvm, &_dac_module);
     dac_configure();
 

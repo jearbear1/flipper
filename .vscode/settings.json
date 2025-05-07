@@ -13,6 +13,8 @@
         "gpio.h": "c",
         "spi.h": "c",
         "uart0.h": "c",
-        "dacc.h": "c"
+        "dacc.h": "c",
+        "dac.h": "c",
+        "flipper.h": "c"
     }
 }
