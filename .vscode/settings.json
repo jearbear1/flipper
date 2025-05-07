@@ -11,6 +11,8 @@
         "sam4s16b.h": "c",
         "ioport.h": "c",
         "gpio.h": "c",
-        "spi.h": "c"
+        "spi.h": "c",
+        "uart0.h": "c",
+        "dacc.h": "c"
     }
 }

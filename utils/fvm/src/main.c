@@ -51,10 +51,12 @@ int main(int argc, char *argv[]) {
 
     dyld_register(fvm, &_button_module);
     button_configure();
+    */
 
     dyld_register(fvm, &_dac_module);
     dac_configure();
 
+    /*
     dyld_register(fvm, &_gpio_module);
     gpio_configure();
 

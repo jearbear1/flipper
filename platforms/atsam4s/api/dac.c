@@ -7,13 +7,7 @@
 #include <dacc.h> 
 
 
-int dac_configure(void);
-int dac_setup(void);
-int dac_enbale_channels(int);
-int dac_set_channels(int);
-int dac_write(void);
-int dac_cleanup(void);
-int dac_trigger0(void);
+#include "dac.h"
 
 // Communicate at 1000000 (1 megabaud)
 int dacBauderate = PLATFORM_BAUDRATE; 
@@ -32,7 +26,7 @@ The maximum DAC-clock frequency is 50 MHz
 */
 
 
-LF_FUNC int dac_configure(void) {
+int dac_configure(void) {
   // ===== PLL1 (B) Options   (Fpll = (Fclk * PLL_mul) / PLL_div)
   // (Fpll = (120Mhz * 16) / 2) = 960Mhz
   // Set fDAC_clock = 480 MHz ?
@@ -45,12 +39,6 @@ LF_FUNC int dac_configure(void) {
    
   // Reset the DAC 
   dacc_reset(DACC);
-
-  return lf_success;
-  
-}
-
-LF_FUNC int dac_setup(void) {
 
   // Enable the DAC 
   dacc_enable_flexible_selection(DACC);
@@ -71,7 +59,7 @@ LF_FUNC int dac_setup(void) {
  
 }
 
-LF_FUNC int dac_enbale_channels(int i) {
+int dac_enbale_channels(int i) {
 
     if (i == 0) {
         // Enaable Digital to Analog Conversion channel 0
@@ -89,7 +77,7 @@ LF_FUNC int dac_enbale_channels(int i) {
 
 // Set Digital to Analog Conversion channels
 
-LF_FUNC int dac_set_channels(int i) {
+int dac_set_channels(int i) {
   if (i == 0) {
     // set Digital to Analog Conversion channel to channel 0
     dacc_set_channel_selection(DACC, DACC_MR_USER_SEL_CHANNEL0);
@@ -104,7 +92,7 @@ LF_FUNC int dac_set_channels(int i) {
 
 }
 
-LF_FUNC int dac_write(void) {
+int dac_write(void) {
 
     // Write Data to DAC
     // DACC_CDR_DATA_Msk is the data to convert
@@ -113,7 +101,7 @@ LF_FUNC int dac_write(void) {
    return lf_success; 
 }
 
-LF_FUNC int dac_cleanup(void) {
+int dac_cleanup(void) {
 
     // Disable Interrupt 
     dacc_disable_interrupt(DACC, DACC_IER_TXRDY);

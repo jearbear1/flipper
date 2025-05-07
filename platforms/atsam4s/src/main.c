@@ -5,6 +5,8 @@
 #include "gpio.h"
 #include "uart0.h"
 
+#include "dac.h"
+
 
 
 // How many clock cycles to wait before giving up initialization. 
@@ -96,8 +98,8 @@ int main(void) {
     // button_configure();
 
     // extern struct _lf_module _dac_module;
-    // dyld_register(_4s, &_dac_module);
-    // dac_configure();
+    dyld_register(_4s, &_dac_module);
+    dac_configure();
 
     // extern struct _lf_module _gpio_module;
     // dyld_register(_4s, &_gpio_module);
