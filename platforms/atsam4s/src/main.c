@@ -1,12 +1,12 @@
 #include "libflipper.h"
 #include <atsam4s.h>
 #include "os/scheduler.h"
+
+
 #include <uart.h>
-#include "gpio.h"
-#include "uart0.h"
-
-
-#include "dac.h"
+#include <gpio.h>
+#include <uart0.h>
+#include <dac.h>
 
 
 // How many clock cycles to wait before giving up initialization. 
@@ -96,9 +96,10 @@ int main(void) {
     // extern struct _lf_module _button_module;
     // dyld_register(_4s, &_button_module);
     // button_configure();
-
-    dyld_register(_4s, &_dac_module);
-    dac_configure();
+    
+    // extern struct _lf_module _dac_module;
+    // dyld_register(_4s, &_dac_module);
+    // dac_configure();
 
     // extern struct _lf_module _gpio_module;
     // dyld_register(_4s, &_gpio_module);

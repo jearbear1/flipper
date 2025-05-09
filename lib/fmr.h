@@ -4,6 +4,7 @@
 #define __lf_fmr_h__
 
 #include "defines.h"
+#include "ll.h"
 
 /* The size of a single FMR packet expressed in bytes. */
 #define FMR_PACKET_SIZE 64
@@ -18,8 +19,10 @@ typedef uint64_t lf_va;
 typedef uint64_t lf_arg;
 /* Used to hold the index of a standard or user module in which a function counterpart exists. */
 typedef uint32_t lf_module;
-/* Used to hold the offset index of a function within a module. */
-typedef uint8_t lf_function;
+/* Defines the standard signature for a device function that can be invoked via the FMR system.
+Each function takes a pointer to its argument data (typically a packed struct) and returns
+an lf_return_t result value. This is used in module function tables to support remote invocation. */
+typedef lf_return_t (*lf_function)(const void *);
 /* Used to hold the number of parameters that are to be passed during a procedure call. */
 typedef uint8_t lf_argc;
 
@@ -120,110 +123,79 @@ typedef uint8_t fmr_class;
 
 /* Contains the information required to obtain, verify, and parse a packet. */
 struct LF_PACKED _fmr_header {
-    /* A magic number indicating the start of the packet. */
     uint8_t magic;
-    /* The checksum of the packet's contents. */
     lf_crc_t crc;
-    /* The length of the packet expressed in bytes. */
     uint16_t len;
-    /* The packet's type. */
     fmr_class type;
 };
 
-/* Standardizes the notion of an argument. */
 struct LF_PACKED _lf_arg {
-    /* The type of the argument. */
     lf_type type;
-    /* The value of the argument. */
     lf_arg value;
 };
 
-/* Generic packet data type that can be passed around by packet parsing equipment. */
 struct LF_PACKED _fmr_packet {
-    /* The header shared by all packet classes. */
     struct _fmr_header hdr;
-    /* A generic payload that is designed to be casted against the class specific data structures. */
     uint8_t payload[(FMR_PACKET_SIZE - sizeof(struct _fmr_header))];
 };
 
-/* Procedure call metadata carried by a packet. */
 struct LF_PACKED _fmr_call {
-    /* The index of the module in which the target routine resides. */
     uint8_t module;
-    /* The index of the function within the module. */
     uint8_t function;
-    /* The return type. */
     lf_type ret;
-    /* The types of the encoded parameters. */
     lf_types argt;
-    /* The number of encoded parameters. */
     lf_argc argc;
-    /* The encoded values of the parameters to be passed to the callee. */
     uint8_t argv[];
 };
 
-/* Contains metadata needed to perform a remote procedure call on a device. */
 struct LF_PACKED _fmr_call_packet {
-    /* The packet header programmed with 'fmr_rpc_class'. */
     struct _fmr_header hdr;
-    /* The procedure call information of the invocation. */
     struct _fmr_call call;
 };
 
-/* Contains metadata needed to perform a push/pull operation. */
 struct LF_PACKED _fmr_push_pull_packet {
-    /* The packet header programmed with 'fmr_push_class' or 'fmr_pull_class'. */
     struct _fmr_header hdr;
-    /* The amount of data to be transferred. */
     uint32_t len;
-    /* The src/dst on the device. */
     uint64_t ptr;
 };
 
-/* Asks the dynamic loader for a module index. */
 struct LF_PACKED _fmr_dyld_packet {
-    /* The packet header programmed with 'fmr_dyld_class'. */
     struct _fmr_header hdr;
-    /* The module name. */
     char module[];
 };
 
-/* Allocates memory on the device. */
 struct LF_PACKED _fmr_memory_packet {
-    /* The packet header programmed with 'fmr_dyld_class'. */
     struct _fmr_header hdr;
-    /* The size. */
     uint32_t size;
-    /* The pointer. */
     uint64_t ptr;
 };
 
-/* A generic datastructure that is sent back following any message runtime trancsaction. */
 struct LF_PACKED _fmr_result {
-    /* The return value of the function called (if any). */
     lf_return_t value;
-    /* The error code generated on the device. */
     uint8_t error;
-    /* NOTE: Add bitfield indicating the need to poll for updates. */
 };
 
-/* Appends an argument to the linked list. */
+/* Append a new argument to a linked list of arguments */
 int lf_append(struct _lf_ll *list, lf_type type, lf_arg value);
 
-/* Generates the appropriate data structure needed for the remote procedure call of 'function' in 'module'. */
-int lf_create_call(lf_module module, lf_function function, lf_type ret, struct _lf_ll *args, struct _fmr_header *header,
-                   struct _fmr_call *call);
+/* Generate call header and body from module and args */
+int lf_create_call(lf_module module, lf_function function, lf_type ret, struct _lf_ll *args, struct _fmr_header *header, struct _fmr_call *call);
 
-/* Creates a struct _lf_arg * type. */
+/* Creates a single argument object */
 struct _lf_arg *lf_arg_create(lf_type type, lf_arg value);
 
-/* Builds an fmr_parameters from a set of variadic arguments provided by the fmr_parameters macro. */
+/* Builds a linked list of arguments from variadic arguments */
 struct _lf_ll *fmr_build(int argc, ...);
 
-/* Executes an fmr_packet and stores the result of the operation in the result buffer provided. */
+/* Execute the Flipper Message Runtime */
 int fmr_perform(struct _lf_device *device, struct _fmr_packet *packet);
 
-/* platform specific internal functions implemented in assembly */
+
+int fmr_register(fmr_class type, int (*handler)(struct _lf_device *, const struct _fmr_packet *, lf_return_t *));
+
+/* Register built-in dispatchers */
+void fmr_init(void);
+
 extern lf_return_t fmr_call(lf_return_t (*const function)(void), lf_type ret, uint8_t argc, uint16_t argt, const void *argv);
 
 #endif

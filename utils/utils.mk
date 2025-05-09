@@ -30,7 +30,7 @@ $(eval $(call ADD_TARGET,fload))
 
 DEPENDENCIES = libflipper
 INC_DIRS = $(BUILD)/include lib lib/flipper platforms/atsam4s platforms/atsam4s/include platforms/posix/include
-SRC_DIRS = utils/fvm/src
+SRC_DIRS = utils/fvm/src lib
 CFLAGS  += $(addprefix -I,$(INC_DIRS))
 LDFLAGS  = -L$(BUILD)/libflipper -lflipper -ldl
 
@@ -38,7 +38,7 @@ $(eval $(call ADD_TARGET,fvm))
 
 # --- UTILS --- #
 
-.PHONY: utils install-utils uninstall-utils
+.PHONY: utils install-utils uninstall-utils clean
 
 # $(BUILD)/fdfu/fdfu
 # $(BUILD)/fdebug/fdebug

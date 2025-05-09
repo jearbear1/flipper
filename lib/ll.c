@@ -10,12 +10,21 @@ size_t lf_ll_count(struct _lf_ll *ll) {
 }
 
 int lf_ll_append(struct _lf_ll **_ll, void *item, void (*deconstructor)(void *)) {
-    lf_assert(_ll, E_NULL, "invalid list reference");
+    if (!_ll) {
+        fprintf(stderr, "[lf_ll_append] Error: _ll is NULL\n");
+        goto fail;
+    }
 
     struct _lf_ll *new = malloc(sizeof(struct _lf_ll));
+    if (!new) {
+        fprintf(stderr, "[lf_ll_append] Error: malloc failed\n");
+        goto fail;
+    }
+
     memset(new, 0, sizeof(struct _lf_ll));
     new->item = item;
     new->deconstructor = deconstructor;
+
     struct _lf_ll *head = *_ll;
     if (head) {
         while (head->next) head = head->next;
@@ -24,10 +33,14 @@ int lf_ll_append(struct _lf_ll **_ll, void *item, void (*deconstructor)(void *))
         *_ll = new;
     }
 
+    fprintf(stderr, "[lf_ll_append] Appended item %p to list at %p\n", item, *_ll);
     return lf_success;
+
 fail:
+    fprintf(stderr, "[lf_ll_append] Failed to append item %p\n", item);
     return lf_error;
 }
+
 
 int lf_ll_concat(struct _lf_ll **_lla, struct _lf_ll *_llb) {
     lf_assert(_lla, E_NULL, "invalid list reference");
@@ -100,3 +113,8 @@ int lf_ll_release(struct _lf_ll **_ll) {
 fail:
     return lf_error;
 }
+
+struct _lf_ll *lf_ll_create(void) {
+    return NULL;  // Empty list
+}
+

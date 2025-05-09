@@ -1,115 +1,90 @@
 #include <arpa/inet.h>
 #include <flipper.h>
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 #define _GNU_SOURCE
 #include <flipper/platforms/posix/network.h>
 #include <dlfcn.h>
-
-#include "dac.h"
+#include <flipper/ll.h>
 
 /* fvm - Creates a local server that acts as a virtual flipper device. */
 
-int main(int argc, char *argv[]) {
+typedef void (*fmr_plugin_register_t)(struct _lf_device *fvm);
 
+int main(int argc, char *argv[]) {
     int e;
     int sd;
     struct sockaddr_in addr;
     struct _lf_device *fvm;
 
-    if (argc > 1) {
-        if (!strcmp(argv[1], "--version")) {
-            printf("FVM version: %s\n\n", lf_get_git_hash());
-            return EXIT_SUCCESS;
-        }
+    if (argc > 1 && !strcmp(argv[1], "--version")) {
+        printf("FVM version: %s\n\n", lf_get_git_hash());
+        return EXIT_SUCCESS;
     }
 
     lf_set_debug_level(LF_DEBUG_LEVEL_ALL);
 
-    /* Create a UDP server. */
+    /* Create UDP socket */
     sd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
     lf_assert(sd, E_UNIMPLEMENTED, "failed to open socket");
 
     bzero(&addr, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(LF_UDP_PORT);
+    addr.sin_port = htons(0);  // Let OS choose a port
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     e = bind(sd, (struct sockaddr *)&addr, sizeof(addr));
     lf_assert(e == 0, E_UNIMPLEMENTED, "failed to bind socket");
 
-    fvm = lf_device_create(lf_network_read, lf_network_write, lf_network_release);
+    // Retrieve actual port
+    socklen_t len = sizeof(addr);
+    getsockname(sd, (struct sockaddr *)&addr, &len);
+    int actual_port = ntohs(addr.sin_port);
+
+    // Print and persist the chosen port
+    printf("Flipper Virtual Machine (FVM) v0.2.0\nFVM listening on port %d\n", actual_port);
+    
+    /* paste the port being used into a file that the caller will
+     access and then use as a port to write to and listen on
+     */
+    
+    FILE *portfile = fopen("/tmp/fvm.port", "w");
+    if (portfile) {
+        fprintf(portfile, "%d\n", actual_port);
+        fclose(portfile);
+    }
+
+    fvm = lf_device_create_named("fvm", lf_network_read, lf_network_write, lf_network_release);
     lf_assert(fvm, E_ENDPOINT, "failed to create device for virtual machine.");
+
+    fvm->modules = lf_ll_create();
+
+    fmr_init();
 
     fvm->_ep_ctx = calloc(1, sizeof(struct _lf_network_context));
     struct _lf_network_context *context = (struct _lf_network_context *)fvm->_ep_ctx;
     lf_assert(context, E_NULL, "failed to allocate memory for context");
     context->fd = sd;
 
-    printf("Flipper Virtual Machine (FVM) v0.1.0\nListening on 'localhost'.\n\n");
 
-    /*
-    dyld_register(fvm, &_adc_module);
-    adc_configure();
-
-    dyld_register(fvm, &_button_module);
-    button_configure();
-    */
-
-    struct _lf_module _dac_module = {
-        .name = "dac",
-    };
-    
-    dyld_register(fvm, &_dac_module);
-    dac_configure();
-
-    /*
-    dyld_register(fvm, &_gpio_module);
-    gpio_configure();
-
-    dyld_register(fvm, &_i2c_module);
-    i2c_configure();
-
-    dyld_register(fvm, &_led_module);
-    led_configure();
-
-    dyld_register(fvm, &_pwm_module);
-    pwm_configure();
-
-    dyld_register(fvm, &_rtc_module);
-    rtc_configure();
-
-    dyld_register(fvm, &_spi_module);
-    spi_configure();
-
-    dyld_register(fvm, &_swd_module);
-    swd_configure();
-
-    dyld_register(fvm, &_temp_module);
-    temp_configure();
-
-    dyld_register(fvm, &_timer_module);
-    timer_configure();
-
-    dyld_register(fvm, &_uart0_module);
-    uart0_configure();
-
-    dyld_register(fvm, &_usart_module);
-    usart_configure();
-
-    dyld_register(fvm, &_usb_module);
-    usb_configure();
-
-    dyld_register(fvm, &_wdt_module);
-    wdt_configure();
-
-    */
     if (argc > 1) {
-
         char *lib = argv[1];
         char *module, **modules = &argv[2];
 
-        while ((module = *modules++)) {
+        void *dlm_global = dlopen(lib, RTLD_LAZY);
+        if (!dlm_global) {
+            fprintf(stderr, "Warning: failed to load '%s' for plugin registration.\n", lib);
+        } else {
+            fmr_plugin_register_t register_plugin = dlsym(dlm_global, "fmr_plugin_register");
+            if (register_plugin) {
+                fprintf(stderr, "[main] Found fmr_plugin_register, registering plugin dispatchers.\n");
+                register_plugin(fvm);
+            } else {
+                fprintf(stderr, "[main] No fmr_plugin_register symbol found in '%s'.\n", lib);
+            }
+        }
 
+        while ((module = *modules++)) {
             printf("Loading module '%s' from '%s'.", module, lib);
             void *dlm = dlopen(lib, RTLD_LAZY);
             lf_assert(dlm, E_NULL, "failed to open module '%s'.", lib);
@@ -121,21 +96,56 @@ int main(int argc, char *argv[]) {
             lf_assert(m, E_NULL, "failed to read symbol '%s' from '%s'.", module_sym, lib);
             printf("Successfully loaded symbol '%s'.", module_sym);
 
+            if (!m->name || strlen(m->name) == 0) {
+                strncpy((char *)m->name, module, sizeof(m->name) - 1);
+                ((char *)m->name)[sizeof(m->name) - 1] = '\0';
+            }
+
+            fprintf(stderr, "[main] Registered module name = '%s'\n", m->name);
+            fprintf(stderr, "[main] m->interface[0] = %p\n", m->interface ? m->interface[0] : NULL);
+            fprintf(stderr, "[main] m->table        = %p\n", (void *)m->table);
+            fprintf(stderr, "[main] m->length       = %zu\n", m->length);
+
             e = dyld_register(fvm, m);
-            lf_assert(e, E_NULL, "failed to register module '%s'.", m->name);
+            lf_assert(e == lf_success, E_NULL, "failed to register module '%s'.", m->name);
             printf("Successfully registered module '%s'.", module);
         }
-
         printf("\n");
     }
 
-    while (1) {
-        struct _fmr_packet packet;
-        fvm->read(fvm, &packet, sizeof(packet));
-        lf_debug_packet(&packet);
-        fmr_perform(fvm, &packet);
-    }
+    print_module_list(fvm->modules);
 
+        while (1) {
+            struct _fmr_packet packet;
+            socklen_t len = sizeof(context->addr);
+
+            printf("[fvm] Awaiting packet...\n");
+
+            ssize_t n = recvfrom(context->fd, &packet, sizeof(packet), 0,
+                                 (struct sockaddr *)&context->addr, &len);
+            if (n < 0) {
+                perror("[fvm] recvfrom failed");
+                continue;
+            }
+
+            fprintf(stderr, "[fvm] Received %zd bytes from %s:%d\n",
+                    n, inet_ntoa(context->addr.sin_addr), ntohs(context->addr.sin_port));
+
+            printf("[fvm] Received packet header: magic=0x%02x len=%d\n", packet.hdr.magic, packet.hdr.len);
+            lf_debug_packet(&packet);
+
+            // Print raw buffer content
+            printf("Raw packet bytes:\n");
+            unsigned char *raw = (unsigned char *)&packet;
+            for (ssize_t i = 0; i < n; ++i) {
+                printf("0x%02x ", raw[i]);
+                if ((i + 1) % 8 == 0) printf("\n");
+            }
+            printf("\n-----------\n");
+
+            fmr_perform(fvm, &packet);
+        }
+    
     close(sd);
 
 fail:

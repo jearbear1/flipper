@@ -1,4 +1,5 @@
-#include "libflipper.h"
+#include "dac.h"
+#include "dyld.h"
 #include "atsam4s.h"
 #include "sam4s16b.h"
 #include <sysclk.h> 
@@ -7,7 +8,7 @@
 #include <dacc.h> 
 
 
-#include "dac.h"
+
 
 // Communicate at 1000000 (1 megabaud)
 int dacBauderate = PLATFORM_BAUDRATE; 
@@ -26,7 +27,7 @@ The maximum DAC-clock frequency is 50 MHz
 */
 
 
-int dac_configure(void) {
+LF_FUNC  int dac_configure(void) {
   // ===== PLL1 (B) Options   (Fpll = (Fclk * PLL_mul) / PLL_div)
   // (Fpll = (120Mhz * 16) / 2) = 960Mhz
   // Set fDAC_clock = 480 MHz ?
@@ -59,7 +60,7 @@ int dac_configure(void) {
  
 }
 
-int dac_enbale_channels(int i) {
+LF_FUNC  int dac_enbale_channels(int i) {
 
     if (i == 0) {
         // Enaable Digital to Analog Conversion channel 0
@@ -77,7 +78,7 @@ int dac_enbale_channels(int i) {
 
 // Set Digital to Analog Conversion channels
 
-int dac_set_channels(int i) {
+LF_FUNC  int dac_set_channels(int i) {
   if (i == 0) {
     // set Digital to Analog Conversion channel to channel 0
     dacc_set_channel_selection(DACC, DACC_MR_USER_SEL_CHANNEL0);
@@ -92,7 +93,7 @@ int dac_set_channels(int i) {
 
 }
 
-int dac_write(void) {
+LF_FUNC  int dac_write(void) {
 
     // Write Data to DAC
     // DACC_CDR_DATA_Msk is the data to convert
@@ -101,7 +102,7 @@ int dac_write(void) {
    return lf_success; 
 }
 
-int dac_cleanup(void) {
+LF_FUNC  int dac_cleanup(void) {
 
     // Disable Interrupt 
     dacc_disable_interrupt(DACC, DACC_IER_TXRDY);
@@ -114,4 +115,19 @@ int dac_cleanup(void) {
     dacc_disable_channel(DACC, DACC_MR_USER_SEL_CHANNEL1);
 
     return lf_success;
+}
+
+LF_FUNC int dac_init_module(void) {
+    uint16_t idx;
+
+    //  it dynamically looks up the module index 
+    if ((dyld_lf_get_selected(), "dac", &idx) != lf_success) return lf_error;
+
+    // 
+    struct _lf_module *m = lf_module_create("dac", idx);
+    if (!m) return lf_error;
+
+    // register module with a function table
+    m->table = dac_table;  
+    return dyld_register(lf_get_selected(), m);
 }

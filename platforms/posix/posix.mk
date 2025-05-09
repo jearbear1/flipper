@@ -28,6 +28,9 @@ CFLAGS = -g -fPIC $(shell pkg-config --cflags libusb-1.0)
 LDFLAGS = $(shell pkg-config --libs libusb-1.0)
 endif
 
+# platform identifier
+CFLAGS += -DFLIPPER_PLATFORM_POSIX
+
 $(eval $(call ADD_TARGET,libflipper))
 
 # --- LIBFLIPPER --- #
@@ -35,7 +38,7 @@ $(eval $(call ADD_TARGET,libflipper))
 .PHONY: libflipper install-libflipper uninstall-libflipper
 
 libflipper: $(BUILD)/libflipper/libflipper.so | $(BUILD)/include/flipper/.dir $(BUILD)/include/flipper/platforms/atmegau2/.dir $(BUILD)/include/flipper/platforms/atsam4s/.dir $(BUILD)/include/flipper/platforms/posix/.dir
-	$(_v)cp -r $(BUILD)/atsam4s/gen/api/*.h $(BUILD)/include/flipper
+	$(_v)if ls $(BUILD)/atsam4s/gen/api/*.h 1> /dev/null 2>&1; then cp -r $(BUILD)/atsam4s/gen/api/*.h $(BUILD)/include/flipper; fi
 	$(_v)cp -r lib/*.h $(BUILD)/include/flipper
 	$(_v)cp -r lib/*.def $(BUILD)/include/flipper
 	$(_v)cp -r lib/carbon/*.h $(BUILD)/include/flipper

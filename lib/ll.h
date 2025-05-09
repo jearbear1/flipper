@@ -35,4 +35,7 @@ int lf_ll_apply_func(struct _lf_ll *ll, lf_ll_applier_func func, void *_ctx);
 /* Releases the list and all of its items. */
 int lf_ll_release(struct _lf_ll **_ll);
 
+struct _lf_ll *lf_ll_create(void);
+
+
 #endif

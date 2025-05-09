@@ -15,6 +15,18 @@
         "uart0.h": "c",
         "dacc.h": "c",
         "dac.h": "c",
-        "flipper.h": "c"
+        "flipper.h": "c",
+        "defines.h": "c",
+        "device.h": "c",
+        "error.h": "c",
+        "dyld.h": "c",
+        "inet.h": "c",
+        "string.h": "c",
+        "network.h": "c",
+        "*.def": "c",
+        "cerrno": "c",
+        "locale": "c",
+        "socket.h": "c",
+        "in.h": "c"
     }
 }

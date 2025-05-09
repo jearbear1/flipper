@@ -1,10 +1,32 @@
-include flipper.mk
+# Adjust this if you installed a different version of GCC via Homebrew
+CC = gcc-12
 
-INC_DIRS = include
-SRC_DIRS = src
-CFLAGS = -I/usr/local/include
-LDFLAGS = -L/usr/local/lib -lflipper
+MODULE = fvm_test
+SRC = src/main.c
+BUILD_DIR = ../../.build
+TARGET = $(BUILD_DIR)/$(MODULE).so
 
-$(eval $(call ADD_TARGET,qux_host))
+CFLAGS = \
+  -fPIC \
+  -Wall \
+  -DLF_MODULE \
+  -rdynamic \
+  -I/Users/jeremiahonwubuya/flipper/lib \
+  -I/Users/jeremiahonwubuya/flipper/.build/include \
+  -I/Users/jeremiahonwubuya/flipper/platforms/atsam4s/asf/include
 
-all:: $(BUILD)/qux_host/qux_host
+LDFLAGS = \
+  -shared \
+  -L/Users/jeremiahonwubuya/flipper/.build/libflipper \
+  -lflipper
+
+all: $(TARGET)
+
+$(TARGET): $(SRC) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(SRC) -o $@ $(LDFLAGS)
+
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+clean:
+	find src -type f ! -name '*.c' -exec rm -f {} +
