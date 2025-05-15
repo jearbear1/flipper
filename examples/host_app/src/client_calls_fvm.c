@@ -41,7 +41,7 @@ void fmr_plugin_register(struct _lf_device *fvm) {
 */
 
 int main(int argc, char *argv[]) {
-    const char *module_name = "fvm_test";
+    const char *module_name = NULL;
 
     int port = -1;
     int port_from_file = 0;
@@ -55,7 +55,16 @@ int main(int argc, char *argv[]) {
     }
 
     if (argc > 1) {
-        port = atoi(argv[1]);
+        module_name = argv[1];
+        printf("[client] Using module name: %s\n", module_name);
+    } else {
+        fprintf(stderr, "[client] ERROR: Missing required module name argument.\n");
+        fprintf(stderr, "Usage: %s [port] <module_name>\n", argv[0]);
+        return 1;
+    }
+        
+    if (argc > 2) {
+        port = atoi(argv[2]);
         // Override port with with Command Line Interface if provided
         printf("[client] Using provided port: %d\n", port);
     } else if (port_from_file) {

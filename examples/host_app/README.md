@@ -54,21 +54,7 @@ cd examples/host_app
 make clean
 make
 ```
-#### Next Step
 
-```sh
-DYLD_LIBRARY_PATH=$HOME/flipper/.build/libflipper \
-$HOME/flipper/.build/fvm/fvm \
-$HOME/flipper/.build/fvm_test.so fvm_
-```
-
-#### Next Step
-
-In a New Terminal Window
-
-```sh
-cd examples/host_app
-```
 #### Next Step
 
 must use gcc here because the inline attributes fail to build with clang
@@ -85,17 +71,26 @@ gcc-12 \
 #### Next Step
 
 ```sh
-cd /example/host_app/src
+DYLD_LIBRARY_PATH=$HOME/flipper/.build/libflipper \
+$HOME/flipper/.build/fvm/fvm \
+$HOME/flipper/.build/fvm_test.so fvm_test
 ```
 
 #### Next Step
 
+In a new Terminal Window (you can press command + t)
 ```sh
-DYLD_LIBRARY_PATH=$HOME/flipper/.build/libflipper ./call_fvm 
+cd /src
+```
+Use this for the module to be on any available port
+
+```sh
+DYLD_LIBRARY_PATH=$HOME/flipper/.build/libflipper ./call_fvm fvm_test
 ```
 FVM looks for any open UDP port and attaches so if you want to use a specific port then do the following instead :
 
 ```sh
-DYLD_LIBRARY_PATH=$HOME/flipper/.build/libflipper ./call_fvm xxxxx
+DYLD_LIBRARY_PATH=$HOME/flipper/.build/libflipper ./call_fvm fvm_test xxxxx
 ```
 Where xxxxx is the UDP port FVM printed it is listening on from the other terminal, for example 62845
+
