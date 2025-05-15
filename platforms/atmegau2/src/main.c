@@ -1,6 +1,9 @@
+#ifdef __AVR__
+    #include <atmegau2.h>
+    #include "megausb.h"
+#endif
+
 #include "libflipper.h"
-#include <atmegau2.h>
-#include "megausb.h"
 
 static struct _lf_device *_u2;
 

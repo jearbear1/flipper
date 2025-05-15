@@ -5,8 +5,8 @@
 
 __attribute__((visibility("default")))
 LF_FUNC lf_return_t fvm_test(void) {
-    printf("Running inside FVM! Hello World from dylib!\n");
-    return 1337;
+    printf("Running inside FVM! Hello World from Flipper Engineering!\n");
+    return 0;
 }
 
 __attribute__((used))

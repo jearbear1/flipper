@@ -8,9 +8,15 @@
 #include <unistd.h> // <-- Required for recvfrom
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <signal.h>
+
 
 
 #define BUFFER_SIZE 1024
+
+
+int running = 1;
+
 
 /*
 // Optional: Define a custom dispatcher for demo (can be replaced)
@@ -21,10 +27,18 @@ int my_custom_dispatcher(struct _lf_device *device, const struct _fmr_packet *pa
 }
 */
 
+void handle_sigint(int);
+
+void handle_sigint(int sig) {
+    running = 0;
+}
+
+/*
 // Runtime plugin registration function (auto-called by FVM if present)
 void fmr_plugin_register(struct _lf_device *fvm) {
     fprintf(stderr, "[plugin] fmr_plugin_register() invoked by FVM.\n");
 }
+*/
 
 int main(int argc, char *argv[]) {
     const char *module_name = "fvm_test";
@@ -114,9 +128,9 @@ int main(int argc, char *argv[]) {
     of the first function in the specified module, expecting 
     no return value and providing no arguments.
     */
-    int result = lf_invoke(fvm, module_name, 0, lf_void_t, &ret, NULL);
+    int result = lf_invoke_by_index(fvm, module_name, 0, lf_void_t, &ret, NULL);
 
-    // ---  recvfrom listening after invoke ---
+    // --- recvfrom listening after invoke ---
     if (result == 0) {
         printf("[client] %s() returned: %llu\n", module_name, ret);
 
@@ -124,16 +138,31 @@ int main(int argc, char *argv[]) {
         struct sockaddr_in server_addr;
         socklen_t addr_len = sizeof(server_addr);
         
-        ssize_t bytes_received = recvfrom(ctx->fd, buffer, BUFFER_SIZE - 1, 0,
+        ssize_t bytes_received = recvfrom(ctx->fd, buffer, BUFFER_SIZE - 1, MSG_DONTWAIT,
                                           (struct sockaddr *)&server_addr, &addr_len);
         
         if (bytes_received < 0) {
-            perror("recvfrom failed");
+            perror("[client] No UDP message received from server (non-fatal)");
         } else {
             buffer[bytes_received] = '\0'; // Null-terminate the received data
-            printf("[client] Received %zd bytes from server: %s\n", bytes_received, buffer);
+
+            // Heuristic: If printable ASCII, assume it's a message
+            int printable = 1;
+            for (ssize_t i = 0; i < bytes_received; i++) {
+                if (buffer[i] < 32 || buffer[i] > 126) {
+                    printable = 0;
+                    break;
+                }
+            }
+
+            if (printable) {
+                printf("[client] Raw message from server: \"%s\"\n", buffer);
+            } else {
+                printf("[client] Received binary response.\n");
+            }
         }
     }
+
 
     if (result < 0) {
         printf("Failed to invoke %s.\n", module_name);

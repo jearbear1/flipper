@@ -6,15 +6,7 @@
 #include "network.h"
 #endif
 
-
-/* Creates a new libflipper device. */
-struct _lf_device *lf_device_create(int (*read)(struct _lf_device *device, void *dst, uint32_t length),
-                                    int (*write)(struct _lf_device *device, void *src, uint32_t length),
-                                    int (*release)(void *device)) {
-    return lf_device_create_named(NULL, read, write, release);
-}
-
-/* Creates a new libflipper device with an optional name. */
+// Creates a new libflipper device with an optional name. This is for FVM
 struct _lf_device *lf_device_create_named(const char *name,
                                           int (*read)(struct _lf_device *device, void *dst, uint32_t length),
                                           int (*write)(struct _lf_device *device, void *src, uint32_t length),
@@ -42,6 +34,13 @@ fail:
     return NULL;
 }
 
+// Creates a new libflipper device. This is for Physical Devices
+struct _lf_device *lf_device_create(int (*read)(struct _lf_device *device, void *dst, uint32_t length),
+                                    int (*write)(struct _lf_device *device, void *src, uint32_t length),
+                                    int (*release)(void *device)) {
+    return lf_device_create_named(NULL, read, write, release);
+}
+
 void lf_device_release(void *_device) {
     struct _lf_device *device = (struct _lf_device *)_device;
     lf_assert(device, E_NULL, "invalid device");
@@ -63,11 +62,11 @@ struct _lf_device *lf_create_virtual_device() {
 /*
 struct _lf_device *lf_create_physical_device(const char *transport) {
     if (strcmp(transport, "usb") == 0) {
-        return lf_device_create_named("carbon", usb_read, usb_write, usb_release);
+        return lf_device_create_named(NULL, usb_read, usb_write, usb_release);
     } else if (strcmp(transport, "uart") == 0) {
-        return lf_device_create_named("carbon", uart_read, uart_write, uart_release);
+        return lf_device_create_named(NULL, uart_read, uart_write, uart_release);
     } else if (strcmp(transport, "usart") == 0) {
-        return lf_device_create_named("carbon", usart_read, usart_write, usart_release);
+        return lf_device_create_named(NULL, usart_read, usart_write, usart_release);
     } else {
         LF_ERROR(E_TYPE, "type error");
         return NULL;

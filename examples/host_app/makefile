@@ -11,13 +11,14 @@ CFLAGS = \
   -Wall \
   -DLF_MODULE \
   -rdynamic \
-  -I/Users/jeremiahonwubuya/flipper/lib \
-  -I/Users/jeremiahonwubuya/flipper/.build/include \
-  -I/Users/jeremiahonwubuya/flipper/platforms/atsam4s/asf/include
+  -I../../lib \
+  -I../../.build/include \
+  -I../../platforms/atsam4s/asf/include \
+  -I../../platforms/posix/include
 
 LDFLAGS = \
   -shared \
-  -L/Users/jeremiahonwubuya/flipper/.build/libflipper \
+  -L../../.build/libflipper \
   -lflipper
 
 all: $(TARGET)

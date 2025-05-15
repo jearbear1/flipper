@@ -1,7 +1,6 @@
 # Host Application Using FVM
 
-This example demonstrates how to build an application for the device, in this case the device being the Flipper Virtual Machine. This example prints a string and returns an int.
-to `IO_1`.
+This example demonstrates how to build an application for the device, in this case the device being the Flipper Virtual Machine. This example prints a string.
 
 #### First Step
 
@@ -94,9 +93,9 @@ cd /example/host_app/src
 ```sh
 DYLD_LIBRARY_PATH=$HOME/flipper/.build/libflipper ./call_fvm 
 ```
-FVM looks for any open UDP port and attaches so if you want to use a specific port then do :
+FVM looks for any open UDP port and attaches so if you want to use a specific port then do the following instead :
 
 ```sh
 DYLD_LIBRARY_PATH=$HOME/flipper/.build/libflipper ./call_fvm xxxxx
 ```
-instead
+Where xxxxx is the UDP port FVM printed it is listening on from the other terminal, for example 62845

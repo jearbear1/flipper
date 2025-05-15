@@ -1,4 +1,7 @@
 #include "libflipper.h"
+
+// #if defined(ATMEGAU2) && defined(__AVR__)
+
 #include <atmegau2.h>
 
 #define SPI_DATA_MODE_0 0x00
@@ -55,3 +58,5 @@ LF_FUNC int spi_read(void *dst, uint32_t length) {
     while (length--) *(uint8_t *)(dst++) = spi_get();
     return lf_success;
 }
+
+

@@ -1,4 +1,7 @@
 #include "libflipper.h"
+
+// #if defined(ATMEGAU2) && defined(__AVR__)
+
 #include <atmegau2.h>
 
 uint8_t idx = 0;
@@ -111,3 +114,6 @@ ISR(USART1_RX_vect) {
         uart0_buffer[idx++] = c;
     }
 }
+
+// #endif
+

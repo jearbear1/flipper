@@ -42,11 +42,7 @@ int main(int argc, char *argv[]) {
     int actual_port = ntohs(addr.sin_port);
 
     // Print and persist the chosen port
-    printf("Flipper Virtual Machine (FVM) v0.2.0\nFVM listening on port %d\n", actual_port);
-    
-    /* paste the port being used into a file that the caller will
-     access and then use as a port to write to and listen on
-     */
+    printf("Flipper Virtual Machine (FVM) v0.1.0\nFVM listening on port %d\n", actual_port);
     
     FILE *portfile = fopen("/tmp/fvm.port", "w");
     if (portfile) {
@@ -115,37 +111,27 @@ int main(int argc, char *argv[]) {
 
     print_module_list(fvm->modules);
 
-        while (1) {
-            struct _fmr_packet packet;
-            socklen_t len = sizeof(context->addr);
+    while (1) {
+        struct _fmr_packet packet;
+        socklen_t len = sizeof(context->addr);
 
-            printf("[fvm] Awaiting packet...\n");
+        printf("[fvm] Awaiting packet...\n");
 
-            ssize_t n = recvfrom(context->fd, &packet, sizeof(packet), 0,
-                                 (struct sockaddr *)&context->addr, &len);
-            if (n < 0) {
-                perror("[fvm] recvfrom failed");
-                continue;
-            }
-
-            fprintf(stderr, "[fvm] Received %zd bytes from %s:%d\n",
-                    n, inet_ntoa(context->addr.sin_addr), ntohs(context->addr.sin_port));
-
-            printf("[fvm] Received packet header: magic=0x%02x len=%d\n", packet.hdr.magic, packet.hdr.len);
-            lf_debug_packet(&packet);
-
-            // Print raw buffer content
-            printf("Raw packet bytes:\n");
-            unsigned char *raw = (unsigned char *)&packet;
-            for (ssize_t i = 0; i < n; ++i) {
-                printf("0x%02x ", raw[i]);
-                if ((i + 1) % 8 == 0) printf("\n");
-            }
-            printf("\n-----------\n");
-
-            fmr_perform(fvm, &packet);
+        ssize_t n = recvfrom(context->fd, &packet, sizeof(packet), 0,
+                             (struct sockaddr *)&context->addr, &len);
+        if (n < 0) {
+            perror("[fvm] recvfrom failed");
+            continue;
         }
-    
+
+        fprintf(stderr, "[fvm] Received %zd bytes from %s:%d\n",
+                n, inet_ntoa(context->addr.sin_addr), ntohs(context->addr.sin_port));
+
+        printf("[fvm] Received packet header: magic=0x%02x len=%d\n", packet.hdr.magic, packet.hdr.len);
+        lf_debug_packet(&packet);
+        fmr_perform(fvm, &packet);
+    }
+
     close(sd);
 
 fail:

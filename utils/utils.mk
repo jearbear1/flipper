@@ -14,10 +14,11 @@ LDFLAGS  = -L$(BUILD)/libflipper -lflipper
 $(eval $(call ADD_TARGET,fdfu))
 
 DEPENDENCIES = libflipper
-INC_DIRS = $(BUILD)/include
-SRC_DIRS = utils/fdebug/src
-CFLAGS   = $(shell pkg-config --cflags libusb-1.0)
+INC_DIRS = $(BUILD)/include lib platforms/atmegau2/include
+SRC_DIRS = utils/fdebug/src lib
+CFLAGS   = $(shell pkg-config --cflags libusb-1.0) $(addprefix -I,$(INC_DIRS))
 LDFLAGS  = -L$(BUILD)/libflipper -lflipper $(shell pkg-config --libs libusb-1.0)
+
 
 $(eval $(call ADD_TARGET,fdebug))
 
@@ -29,7 +30,7 @@ LDFLAGS  = -L$(BUILD)/libflipper -lflipper
 $(eval $(call ADD_TARGET,fload))
 
 DEPENDENCIES = libflipper
-INC_DIRS = $(BUILD)/include lib lib/flipper platforms/atsam4s platforms/atsam4s/include platforms/posix/include
+INC_DIRS = $(BUILD)/include lib platforms/atsam4s platforms/atsam4s/include platforms/posix/include
 SRC_DIRS = utils/fvm/src lib
 CFLAGS  += $(addprefix -I,$(INC_DIRS))
 LDFLAGS  = -L$(BUILD)/libflipper -lflipper -ldl

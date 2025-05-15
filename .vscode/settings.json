@@ -27,6 +27,8 @@
         "cerrno": "c",
         "locale": "c",
         "socket.h": "c",
-        "in.h": "c"
+        "in.h": "c",
+        "dlfcn.h": "c",
+        "lf_config.h": "c"
     }
 }

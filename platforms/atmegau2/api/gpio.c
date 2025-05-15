@@ -1,5 +1,9 @@
 #include "libflipper.h"
+
+// #if defined(ATMEGAU2) && defined(__AVR__)
+
 #include <atmegau2.h>
+
 
 LF_FUNC int gpio_configure(void) {
     return lf_success;
@@ -18,3 +22,6 @@ LF_FUNC void gpio_write(uint32_t set, uint32_t clear) {
 LF_FUNC uint32_t gpio_read(uint32_t mask) {
     return (uint32_t)PIND;
 }
+
+// #endif
+
