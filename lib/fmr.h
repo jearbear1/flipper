@@ -175,6 +175,11 @@ struct LF_PACKED _fmr_result {
     uint8_t error;
 };
 
+struct _fmr_table {
+    lf_function *functions;
+    size_t count;
+};
+
 /* Append a new argument to a linked list of arguments */
 int lf_append(struct _lf_ll *list, lf_type type, lf_arg value);
 

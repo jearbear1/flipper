@@ -107,55 +107,67 @@ int lf_invoke_by_index(struct _lf_device *device, const char *module, uint8_t in
     struct _fmr_packet _packet;
     struct _fmr_call_packet *packet = (struct _fmr_call_packet *)&_packet;
     struct _fmr_header *hdr = &packet->hdr;
+    struct _fmr_call *call = &packet->call;
+    struct _lf_module *m;
     struct _fmr_result result;
-    struct _lf_module *m = NULL;
-    int e;
     lf_crc_t crc;
+    int e;
 
     lf_assert(device, E_NULL, "invalid device");
-    lf_assert(module, E_NULL, "invalid module");
+    lf_assert(module, E_NULL, "invalid module name");
 
     memset(&_packet, 0, sizeof(_packet));
-    hdr->magic = FMR_MAGIC_NUMBER;
-    hdr->len = sizeof(packet->hdr);
 
     m = dyld_module(device, module);
     lf_assert(m, E_MODULE, "No counterpart found for module '%s'.", module);
+    lf_assert(index < m->length, E_FMR, "Invalid function index %d for module '%s' (max %zu)", index, module, m->length);
 
-    packet->call.module = m->idx;
-    packet->call.function = index;
-    packet->call.ret = ret;
-    packet->call.argt = 0;
-    packet->call.argc = args ? lf_ll_count(args) : 0;
-
-    uint8_t *dst = packet->call.argv;
-    struct _lf_ll *n = args;
-    for (lf_argc i = 0; i < packet->call.argc; i++) {
-        struct _lf_arg *arg = (struct _lf_arg *)n->item;
-        packet->call.argt |= ((arg->type & 0xf) << (i * 4));
-        memcpy(dst, &arg->value, lf_sizeof(arg->type));
-        dst += lf_sizeof(arg->type);
-        n = n->next;
-    }
-
+    hdr->magic = FMR_MAGIC_NUMBER;
+    hdr->len = sizeof(*hdr) + sizeof(*call);
     hdr->type = fmr_rpc_class;
-    hdr->len += sizeof(struct _fmr_call) + (dst - packet->call.argv);
+
+    call->module = m->idx;
+    call->function = index;
+    call->ret = ret;
+    call->argt = 0;
+    call->argc = args ? lf_ll_count(args) : 0;
+
+    if (args) {
+        struct _lf_ll *node = args;
+        uint8_t *argv = call->argv;
+        uint8_t i = 0;
+        while (node && i < call->argc) {
+            struct _lf_arg *arg = node->item;
+            lf_type type = arg->type;
+            lf_arg value = arg->value;
+            uint8_t size = lf_sizeof(type);
+            memcpy(argv, &value, size);
+            argv += size;
+            hdr->len += size;
+            call->argt |= (type << (i * 2));
+            node = node->next;
+            i++;
+        }
+    }
 
     lf_crc(packet, hdr->len, &crc);
     hdr->crc = crc;
-    lf_debug_packet((struct _fmr_packet *)packet);
+
+    lf_debug_packet(&_packet);
 
     e = device->write(device, packet, sizeof(_packet));
-    lf_assert(e, E_ENDPOINT, "Failed to send message to device '%s'.", device->name);
+    lf_assert(e == lf_success, E_ENDPOINT, "Failed to send message to device '%s'.", device->name);
 
     e = device->read(device, &result, sizeof(struct _fmr_result));
-    lf_assert(e, E_ENDPOINT, "Failed to receive message from the device '%s'.", device->name);
+    lf_assert(e == lf_success, E_ENDPOINT, "Failed to receive message from the device '%s'.", device->name);
 
     lf_debug_result(&result);
-    lf_assert(result.error == E_OK, result.error, "An error occured on the device '%s':", device->name);
+    lf_assert(result.error == E_OK, result.error, "An error occurred on the device '%s'.", device->name);
 
-    *retval = result.value;
+    if (retval) *retval = result.value;
+
     return lf_success;
+
 fail:
     return lf_error;
 }

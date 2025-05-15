@@ -105,7 +105,10 @@ static int fmr_rpc(struct _lf_device *device, const struct _fmr_packet *packet, 
     for (uint8_t i = 0; node && i < rpc->module; i++) node = node->next;
     struct _lf_module *module = node ? (struct _lf_module *)node->item : NULL;
 
-    if (!module || !module->table || !module->table[rpc->index]) return lf_error;
+    if (!module || !module->table || rpc->index >= module->length || !module->table[rpc->index]) {
+        fprintf(stderr, "[fmr_rpc] Invalid module or index %d (max %zu)\n", rpc->index, module ? module->length : 0);
+        return lf_error;
+    }
     lf_function fn = module->table[rpc->index];
     *retval = fn(data + sizeof(struct _fmr_rpc));
     return lf_success;
