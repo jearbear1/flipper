@@ -2,6 +2,8 @@
 #include "fmr.h"
 #include <string.h>
 #include <stdlib.h>
+#include <error.h>
+#include <stdio.h>
 
 #define MAX_DISPATCHERS FMR_CLASS_COUNT
 
@@ -35,8 +37,8 @@ void fmr_init(void) {
 
 int fmr_perform(struct _lf_device *device, struct _fmr_packet *packet) {
     struct _fmr_header *hdr = &packet->hdr;
-    struct _fmr_result result;
-    lf_return_t retval = -1;
+    struct _fmr_result result = {0};
+    lf_return_t retval = 0;
     lf_crc_t _crc, crc;
     int e = E_UNIMPLEMENTED;
 
@@ -45,29 +47,37 @@ int fmr_perform(struct _lf_device *device, struct _fmr_packet *packet) {
     _crc = hdr->crc;
     hdr->crc = 0;
     lf_crc(packet, hdr->len, &crc);
-    lf_assert(!memcmp(&_crc, &crc, sizeof(crc)), E_CHECKSUM, "checksums do not match (0x%04x/0x%04x)", _crc, crc);
+    lf_assert(!memcmp(&_crc, &crc, sizeof(crc)), E_CHECKSUM, "checksums do not match (0x%04x/0x04x)", _crc, crc);
 
     lf_error_set(E_OK);
 
     lf_assert(hdr->type < MAX_DISPATCHERS, E_FMR, "unknown header type '%d'", hdr->type);
     if (!device || !device->modules) {
-        fprintf(stderr, "[fmr_perform] ERROR: device or device->modules is NULL\n");
+        lf_debug("[fmr_perform] ERROR: device or device->modules is NULL");
+        result.error = E_NULL;
+        goto send_result;
     }
 
     if (!fmr_registry[hdr->type]) {
-        fprintf(stderr, "[fmr_perform] ERROR: no registered handler for type %d\n", hdr->type);
-        goto fail;
+        lf_debug("[fmr_perform] ERROR: no registered handler for type %d", hdr->type);
+        result.error = E_FMR;
+        goto send_result;
     }
 
+    fprintf(stderr, "[fmr_perform] Dispatching packet type=%d\n", hdr->type);
     int dispatch_result = fmr_registry[hdr->type](device, packet, &retval);
     if (!dispatch_result) {
-        fprintf(stderr, "[fmr_perform] Dispatcher for type %d failed.\n", hdr->type);
+        lf_debug("[fmr_perform] Dispatcher for type %d failed", hdr->type);
+        result.error = E_FMR;
+    } else {
+        result.error = E_OK;
     }
-    lf_assert(dispatch_result, E_FMR, "failed to dispatch call");
+    result.value = retval;
 
 fail:
     result.error = lf_error_get();
-    result.value = retval;
+send_result:
+    fprintf(stderr, "[fmr_perform] Sending result: value=%llu, error=%d\n", result.value, result.error);
     e = device->write(device, &result, sizeof(result));
     lf_debug_result(&result);
     return e;
@@ -106,7 +116,7 @@ static int fmr_rpc(struct _lf_device *device, const struct _fmr_packet *packet, 
     struct _lf_module *module = node ? (struct _lf_module *)node->item : NULL;
 
     if (!module || !module->table || rpc->index >= module->length || !module->table[rpc->index]) {
-        fprintf(stderr, "[fmr_rpc] Invalid module or index %d (max %zu)\n", rpc->index, module ? module->length : 0);
+        lf_debug("[fmr_rpc] Invalid module or index %d (max %zu)", rpc->index, module ? module->length : 0);
         return lf_error;
     }
     lf_function fn = module->table[rpc->index];
@@ -147,9 +157,20 @@ static int fmr_pull(struct _lf_device *device, const struct _fmr_packet *packet,
 /* fmr_dyld: Dynamically resolves a module by name at runtime and returns its index */
 static int fmr_dyld(struct _lf_device *device, const struct _fmr_packet *packet, lf_return_t *retval) {
     const char *name = (const char *)(packet + 1);
+    fprintf(stderr, "[fmr_dyld] Raw packet module name (len=%zu): ", strlen(name) + 1);
+    for (size_t i = 0; i < strlen(name) + 1; i++) {
+        fprintf(stderr, "0x%02x ", ((uint8_t *)name)[i]);
+    }
+    fprintf(stderr, "\n");
+    fprintf(stderr, "[fmr_dyld] Looking up module '%s'\n", name);
     struct _lf_module *module = lf_module_get_by_name(device, name);
-    if (!module) return lf_error;
+    if (!module) {
+        fprintf(stderr, "[fmr_dyld] Module '%s' not found\n", name);
+        *retval = 0; // Default to 0 on failure
+        return lf_error;
+    }
     *retval = module->idx;
+    fprintf(stderr, "[fmr_dyld] Found module '%s' with idx=%u\n", name, module->idx);
     return lf_success;
 }
 

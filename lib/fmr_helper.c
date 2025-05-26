@@ -7,12 +7,12 @@
 #include <stdarg.h>
 
 /* Append a new argument to a linked list of arguments */
-int lf_append(struct _lf_ll *list, lf_type type, lf_arg value) {
+int fmr_append_arg(struct _lf_ll **list, lf_type type, lf_arg value) {
     struct _lf_arg *arg = malloc(sizeof(struct _lf_arg));
     if (!arg) return lf_error;
     arg->type = type;
     arg->value = value;
-    return lf_ll_append(&list, arg, NULL);  // Wrap in address and no deconstructor
+    return lf_ll_append(list, arg, NULL);  // Wrap in address and no deconstructothis uses lf_ll_append directly
 }
 
 /* Creates a single argument object */
@@ -26,13 +26,17 @@ struct _lf_arg *lf_arg_create(lf_type type, lf_arg value) {
 
 /* Computes the size in bytes of the lf_type */
 int lf_sizeof(lf_type type) {
-    switch (type & 0x7) {
-        case lf_uint8_t: return 1;
-        case lf_uint16_t: return 2;
+    switch (type) {
+        case lf_uint8_t:
+        case lf_int8_t: return 1;
+        case lf_uint16_t:
+        case lf_int16_t: return 2;
         case lf_uint32_t:
-        case lf_int_t: return 4;
-        case lf_ptr_t:
-        case lf_uint64_t: return 8;
+        case lf_int_t:
+        case lf_int32_t: return 4;
+        case lf_uint64_t:
+        case lf_int64_t:
+        case lf_ptr_t: return 8;
         default: return 0;
     }
 }
@@ -48,7 +52,7 @@ struct _lf_ll *fmr_build(int argc, ...) {
     for (int i = 0; i < argc; i++) {
         lf_type type = va_arg(ap, int);
         lf_arg value = va_arg(ap, lf_arg);
-        if (lf_append(args, type, value) != lf_success) {
+        if (fmr_append_arg(args, type, value) != lf_success) {
             lf_ll_release(&args);
             return NULL;
         }
@@ -69,17 +73,25 @@ int lf_create_call(lf_module module, lf_function function, lf_type ret, struct _
     call->argc = args ? lf_ll_count(args) : 0;
 
     uint8_t *dst = call->argv;
+    size_t payload_size = sizeof(struct _fmr_call);
     struct _lf_ll *n = args;
     for (lf_argc i = 0; i < call->argc; i++) {
         struct _lf_arg *arg = (struct _lf_arg *)n->item;
         call->argt |= ((arg->type & 0xf) << (i * 4));
-        memcpy(dst, &arg->value, lf_sizeof(arg->type));
-        dst += lf_sizeof(arg->type);
+        size_t arg_size = lf_sizeof(arg->type);
+        // check in to ensure the total packet size doesn’t exceed FMR_PACKET_SIZE:
+        if (payload_size + arg_size > FMR_PACKET_SIZE - sizeof(struct _fmr_header)) {
+            lf_debug("Argument list too large for packet");
+            return lf_error;
+        }
+        memcpy(dst, &arg->value, arg_size);
+        dst += arg_size;
+        payload_size += arg_size;
         n = n->next;
     }
 
     header->type = fmr_rpc_class;
-    header->len += sizeof(struct _fmr_call) + (dst - call->argv);
+    header->len = payload_size;
     return lf_success;
 }
 

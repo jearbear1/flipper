@@ -62,7 +62,6 @@ int main(int argc, char *argv[]) {
     lf_assert(context, E_NULL, "failed to allocate memory for context");
     context->fd = sd;
 
-
     if (argc > 1) {
         char *lib = argv[1];
         char *module, **modules = &argv[2];
@@ -86,7 +85,7 @@ int main(int argc, char *argv[]) {
             lf_assert(dlm, E_NULL, "failed to open module '%s'.", lib);
 
             char module_sym[32];
-            snprintf(module_sym, sizeof(module_sym), "_%s_module", module);
+            snprintf(module_sym, sizeof(module_sym), "%s_module", module);
 
             struct _lf_module *m = dlsym(dlm, module_sym);
             lf_assert(m, E_NULL, "failed to read symbol '%s' from '%s'.", module_sym, lib);
@@ -130,6 +129,8 @@ int main(int argc, char *argv[]) {
         printf("[fvm] Received packet header: magic=0x%02x len=%d\n", packet.hdr.magic, packet.hdr.len);
         lf_debug_packet(&packet);
         fmr_perform(fvm, &packet);
+        fprintf(stderr, "[fvm] Sent response for packet (magic=0x%02x, type=%d)\n",
+                packet.hdr.magic, packet.hdr.type);
     }
 
     close(sd);

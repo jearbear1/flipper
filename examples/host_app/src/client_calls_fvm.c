@@ -5,27 +5,15 @@
 #include <string.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
-#include <unistd.h> // <-- Required for recvfrom
+#include <unistd.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <signal.h>
-
-
+#include <errno.h>
 
 #define BUFFER_SIZE 1024
 
-
 int running = 1;
-
-
-/*
-// Optional: Define a custom dispatcher for demo (can be replaced)
-int my_custom_dispatcher(struct _lf_device *device, const struct _fmr_packet *packet, lf_return_t *ret) {
-    fprintf(stderr, "[plugin] my_custom_dispatcher() called!\n");
-    *ret = 42; // dummy return
-    return lf_success;
-}
-*/
 
 void handle_sigint(int);
 
@@ -33,20 +21,12 @@ void handle_sigint(int sig) {
     running = 0;
 }
 
-/*
-// Runtime plugin registration function (auto-called by FVM if present)
-void fmr_plugin_register(struct _lf_device *fvm) {
-    fprintf(stderr, "[plugin] fmr_plugin_register() invoked by FVM.\n");
-}
-*/
-
 int main(int argc, char *argv[]) {
     const char *module_name = NULL;
 
     int port = -1;
     int port_from_file = 0;
 
-    // Try to read from /tmp/fvm.port
     FILE *pf = fopen("/tmp/fvm.port", "r");
     if (pf) {
         fscanf(pf, "%d", &port);
@@ -65,12 +45,10 @@ int main(int argc, char *argv[]) {
         
     if (argc > 2) {
         port = atoi(argv[2]);
-        // Override port with with Command Line Interface if provided
         printf("[client] Using provided port: %d\n", port);
     } else if (port_from_file) {
         printf("[client] Auto-loaded port: %d\n", port);
     } else {
-        // Final fallback if port is still unset
         port = LF_UDP_PORT;
         printf("[client] Using default port: %d\n", port);
     }
@@ -84,6 +62,7 @@ int main(int argc, char *argv[]) {
     fvm->_ep_ctx = calloc(1, sizeof(struct _lf_network_context));
     if (!fvm->_ep_ctx) {
         printf("Failed to allocate network context.\n");
+        lf_device_release(fvm);
         return 1;
     }
 
@@ -91,6 +70,8 @@ int main(int argc, char *argv[]) {
 
     if (lf_network_connect(fvm, "127.0.0.1", port) != lf_success) {
         printf("Failed to connect to FVM at localhost:%d\n", port);
+        free(fvm->_ep_ctx);
+        lf_device_release(fvm);
         return 1;
     }
 
@@ -99,6 +80,8 @@ int main(int argc, char *argv[]) {
 
     if (lf_select(fvm) < 0) {
         printf("Failed to select FVM device.\n");
+        free(fvm->_ep_ctx);
+        lf_device_release(fvm);
         return 1;
     }
 
@@ -112,50 +95,31 @@ int main(int argc, char *argv[]) {
 
     uint16_t idx;
     if (lf_dyld_dyn_sym_lookup(fvm, module_name, &idx) != lf_success) {
-        fprintf(stderr, "DYLD lookup failed for module '%s'.\n", module_name);
+        fprintf(stderr, "[client] DYLD lookup failed for module '%s'.\n", module_name);
+        free(fvm->_ep_ctx);
+        lf_device_release(fvm);
         return 1;
     }
 
-    struct _lf_module *mod = lf_module_get_by_name(fvm, module_name);
-    if (!mod) {
-        mod = lf_module_create(module_name, idx);
-        if (!mod) {
-            fprintf(stderr, "Failed to create module after DYLD.\n");
-            return 1;
-        }
-        dyld_register(fvm, mod);
-    }
-
-    fprintf(stderr, "[client] Module index for '%s': %d\n", module_name, mod->idx);
+    fprintf(stderr, "[client] Module index for '%s': %d\n", module_name, idx);
     fprintf(stderr, "[client] About to invoke '%s' to %s:%d\n",
             module_name, inet_ntoa(ctx->addr.sin_addr), ntohs(ctx->addr.sin_port));
 
-   
     lf_return_t ret;
-    /*
-    this call to lf_invoke is requesting the execution 
-    of the first function in the specified module, expecting 
-    no return value and providing no arguments.
-    */
+    fprintf(stderr, "[client] Sending RPC packet to invoke '%s' function 0\n", module_name);
     int result = lf_invoke_by_index(fvm, module_name, 0, lf_void_t, &ret, NULL);
 
-    // --- recvfrom listening after invoke ---
-    if (result == 0) {
-        printf("[client] %s() returned: %llu\n", module_name, ret);
-
+    if (result == lf_success) {
+        fprintf(stderr, "[client] Successfully sent RPC packet, awaiting response\n");
         char buffer[BUFFER_SIZE];
         struct sockaddr_in server_addr;
         socklen_t addr_len = sizeof(server_addr);
         
+        // Non-blocking read for additional response
         ssize_t bytes_received = recvfrom(ctx->fd, buffer, BUFFER_SIZE - 1, MSG_DONTWAIT,
                                           (struct sockaddr *)&server_addr, &addr_len);
-        
-        if (bytes_received < 0) {
-            perror("[client] No UDP message received from server (non-fatal)");
-        } else {
-            buffer[bytes_received] = '\0'; // Null-terminate the received data
-
-            // Heuristic: If printable ASCII, assume it's a message
+        if (bytes_received > 0) {
+            buffer[bytes_received] = '\0';
             int printable = 1;
             for (ssize_t i = 0; i < bytes_received; i++) {
                 if (buffer[i] < 32 || buffer[i] > 126) {
@@ -167,17 +131,25 @@ int main(int argc, char *argv[]) {
             if (printable) {
                 printf("[client] Raw message from server: \"%s\"\n", buffer);
             } else {
-                printf("[client] Received binary response.\n");
+                printf("[client] Received binary response (%zd bytes).\n", bytes_received);
             }
+        } else if (bytes_received < 0 && errno != EWOULDBLOCK) {
+            fprintf(stderr, "[client] Failed to receive response from server: %s\n", strerror(errno));
         }
+
+        printf("[client] %s() returned: %llu\n", module_name, ret);
     }
 
-
-    if (result < 0) {
-        printf("Failed to invoke %s.\n", module_name);
+    if (result != lf_success) {
+        fprintf(stderr, "[client] Failed to invoke %s: error %d\n", module_name, result);
+        free(fvm->_ep_ctx);
+        lf_device_release(fvm);
         return 1;
     }
 
     printf("%s() invoked successfully.\n", module_name);
+
+    free(fvm->_ep_ctx);
+    lf_device_release(fvm);
     return 0;
 }

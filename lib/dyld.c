@@ -1,5 +1,7 @@
 #include "libflipper.h"
-#include <string.h> // Needed for strcmp, strdup
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
 
 /* Debug helper to print all registered modules */
 void print_module_list(struct _lf_ll *list) {
@@ -71,7 +73,7 @@ struct _lf_module *dyld_module(struct _lf_device *device, const char *module) {
 
     // Fallback: Attempt to resolve and register
     uint16_t idx;
-    lf_assert( lf_dyld_dyn_sym_lookup(device, module, &idx), E_MODULE,
+    lf_assert(lf_dyld_dyn_sym_lookup(device, module, &idx), E_MODULE,
               "Failed to find counterpart for module '%s' on device '%s'.", module, device->name);
 
     struct _lf_module *m = lf_module_create(module, idx);
@@ -93,9 +95,11 @@ struct _lf_module *lf_module_get_by_name(struct _lf_device *device, const char *
     lf_assert(device, E_NULL, "Device is NULL");
     lf_assert(name, E_NULL, "Module name is NULL");
 
+    fprintf(stderr, "[lf_module_get_by_name] Looking for '%s'\n", name);
     size_t count = lf_ll_count(device->modules);
     for (size_t i = 0; i < count; i++) {
         struct _lf_module *mod = lf_ll_item(device->modules, i);
+        fprintf(stderr, "[lf_module_get_by_name] Checking '%s'\n", mod ? mod->name : "(null)");
         if (mod && mod->name && strcmp(mod->name, name) == 0) {
             return mod;
         }
@@ -124,11 +128,11 @@ int lf_dyld_dyn_sym_lookup(struct _lf_device *device, const char *module, uint16
     if (device->name[0] == '\0') {
         strncpy(device->name, "fvm", sizeof(device->name) - 1);
         device->name[sizeof(device->name) - 1] = '\0';
-        fprintf(stderr, "[// lf_dyld_dyn_sym_lookup] Warning: device->name was empty, defaulted to 'fvm'.\n");
+        fprintf(stderr, "[lf_dyld_dyn_sym_lookup] Warning: device->name was empty, defaulted to 'fvm'.\n");
     }
 
     hdr->magic = FMR_MAGIC_NUMBER;
-    hdr->len = sizeof(hdr);
+    hdr->len = sizeof(*hdr);
     hdr->type = fmr_dyld_class;
 
     strncpy(packet->module, module, sizeof(struct _fmr_packet) - sizeof(struct _fmr_dyld_packet));
@@ -140,38 +144,44 @@ int lf_dyld_dyn_sym_lookup(struct _lf_device *device, const char *module, uint16
     lf_debug_packet(&_packet);
 
     e = device->write(device, packet, sizeof(_packet));
-    lf_assert(e, E_ENDPOINT, "Failed to send message to device '%s'.", device->name);
+    lf_assert(e == lf_success, E_ENDPOINT, "Failed to send dyld packet to device '%s'.", device->name);
 
     e = device->read(device, &result, sizeof(struct _fmr_result));
-    lf_assert(e, E_ENDPOINT, "Failed to receive message from the device '%s'.", device->name);
+    lf_assert(e == lf_success, E_ENDPOINT, "Failed to receive response from device %s: error %d", device->name, errno);
 
-    lf_debug_result(&result);
-    lf_assert(result.error == E_OK, result.error, "An error occurred on the device '%s'.", device->name);
+    fprintf(stderr, "[lf_dyld_dyn_sym_lookup] Received result: value=%llu, error=%d\n", result.value, result.error);
 
-    lf_assert(result.value <= UINT16_MAX, E_MODULE, "Module index '%llu' out of bounds", result.value);
+    lf_debug("fmr_result=%d", result.error);
+    lf_assert(result.error == E_OK, result.error, "Device '%s' returned error %d for module '%s'.", device->name, result.error, module);
+
+    // Temporarily relax UINT16_MAX check for debugging
+    if (result.value > UINT16_MAX) {
+        fprintf(stderr, "[lf_dyld_dyn_sym_lookup] Warning: module index '%llu' exceeds UINT16_MAX for '%s'\n", result.value, module);
+    }
     *idx = (uint16_t)result.value;
 
+    lf_debug("lf_dyld_dyn_sym_lookup: Retrieved index %d for module '%s'.", *idx, module);
     return lf_success;
 
 fail:
     return lf_error;
 }
 
-/* Unload a module from the device. */
+/* Unload a function from the device. */
 int dyld_unload(struct _lf_device *device, char *module) {
     lf_assert(device, E_NULL, "invalid device");
     lf_assert(module, E_NULL, "invalid module");
 
-    struct _lf_module *m = dyld_module(device, module);
-    lf_assert(m, E_NULL, "no module '%s' loaded on device '%s'.", module, device->name);
-    lf_ll_remove(&device->modules, m);
+    struct _lf_module *f = dyld_module(device, module);
+    lf_assert(f == NULL, E_NULL, "no module '%s' loaded on device '%s'.", module, device->name);
+    lf_ll_remove(&device->modules, f);
     return lf_success;
 
 fail:
     return lf_error;
 }
 
-/* Returns the currently selected device, safely wrapped for dyld users. */
-struct _lf_device *dyld_lf_get_selected(void) {
+/* Returns the selected device, safely wrapped for dyld users. */
+struct _lf_device *lf_dyld_get_selected(void) {
     return lf_get_selected();
 }

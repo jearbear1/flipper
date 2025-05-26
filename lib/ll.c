@@ -11,13 +11,13 @@ size_t lf_ll_count(struct _lf_ll *ll) {
 
 int lf_ll_append(struct _lf_ll **_ll, void *item, void (*deconstructor)(void *)) {
     if (!_ll) {
-        fprintf(stderr, "[lf_ll_append] Error: _ll is NULL\n");
+        lf_debug("[lf_ll_append] Error: _ll is NULL");
         goto fail;
     }
 
     struct _lf_ll *new = malloc(sizeof(struct _lf_ll));
     if (!new) {
-        fprintf(stderr, "[lf_ll_append] Error: malloc failed\n");
+        lf_debug("[lf_ll_append] Error: malloc failed");
         goto fail;
     }
 
@@ -33,14 +33,13 @@ int lf_ll_append(struct _lf_ll **_ll, void *item, void (*deconstructor)(void *))
         *_ll = new;
     }
 
-    fprintf(stderr, "[lf_ll_append] Appended item %p to list at %p\n", item, *_ll);
+    lf_debug("[lf_ll_append] Appended item %p to list at %p", item, *_ll);
     return lf_success;
 
 fail:
-    fprintf(stderr, "[lf_ll_append] Failed to append item %p\n", item);
+    lf_debug("[lf_ll_append] Failed to append item %p", item);
     return lf_error;
 }
-
 
 int lf_ll_concat(struct _lf_ll **_lla, struct _lf_ll *_llb) {
     lf_assert(_lla, E_NULL, "invalid list reference");
@@ -67,21 +66,38 @@ fail:
     return NULL;
 }
 
+// Helper function to free a single linked list node without modifying external pointers
+static void lf_ll_free_node(struct _lf_ll *ll) {
+    if (!ll) return;
+    if (ll->deconstructor) ll->deconstructor(ll->item);
+    free(ll);
+}
+
 void lf_ll_free(struct _lf_ll **_ll) {
     struct _lf_ll *ll = *_ll;
-    if (ll->deconstructor) ll->deconstructor(ll->item);
-    *_ll = (*_ll)->next;
-    free(ll);
+    if (!ll) return;
+    *_ll = ll->next;
+    lf_ll_free_node(ll);
 }
 
 void lf_ll_remove(struct _lf_ll **_ll, void *item) {
     lf_assert(_ll, E_NULL, "invalid list reference");
 
-    while (*_ll) {
-        if ((*_ll)->item == item) {
-            lf_ll_free(_ll);
+    struct _lf_ll *prev = NULL;
+    struct _lf_ll *current = *_ll;
+
+    while (current) {
+        if (current->item == item) {
+            if (prev) {
+                prev->next = current->next;
+            } else {
+                *_ll = current->next;
+            }
+            lf_ll_free_node(current);
+            current = prev ? prev->next : *_ll;
         } else {
-            _ll = &(*_ll)->next;
+            prev = current;
+            current = current->next;
         }
     }
 
@@ -104,10 +120,13 @@ fail:
     return lf_error;
 }
 
-/* Releases the entire linked list. */
 int lf_ll_release(struct _lf_ll **_ll) {
     lf_assert(_ll, E_NULL, "invalid list reference");
-    while (*_ll) lf_ll_free(_ll);
+    while (*_ll) {
+        struct _lf_ll *next = (*_ll)->next;
+        lf_ll_free_node(*_ll);
+        *_ll = next;
+    }
 
     return lf_success;
 fail:
@@ -117,4 +136,3 @@ fail:
 struct _lf_ll *lf_ll_create(void) {
     return NULL;  // Empty list
 }
-

@@ -11,7 +11,7 @@ int dac_init_module(void);
 
 // Declare the core DAC control functions
 int dac_configure(void);
-int dac_enbale_channels(int);
+int dac_enable_channels(int);
 int dac_set_channels(int);
 int dac_write(void);
 int dac_trigger0(void);

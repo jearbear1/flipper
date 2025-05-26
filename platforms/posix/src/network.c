@@ -2,6 +2,7 @@
 #include "network.h"
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 
 struct _lf_device *lf_network_device_for_hostname(char *hostname) {
     struct _lf_network_context *context = NULL;
@@ -77,13 +78,35 @@ int lf_network_read(struct _lf_device *device, void *dst, uint32_t length) {
 
     fprintf(stderr, "[debug] Trying to read from fd=%d\n", ctx->fd);
     
-    // Capture sender address for reply path
-    ssize_t e = recvfrom(ctx->fd, dst, length, 0, (struct sockaddr *)&src_addr, &addr_len);
+    // Retry recvfrom to handle transient errors
+    int retries = 5;
+    int delay_ms = 100;
+    ssize_t e;
+    do {
+        e = recvfrom(ctx->fd, dst, length, 0, (struct sockaddr *)&src_addr, &addr_len);
+        if (e >= 0) {
+            break;
+        }
+        if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+            fprintf(stderr, "[lf_network_read] recvfrom retrying (errno=%d)\n", errno);
+            usleep(delay_ms * 1000);
+        } else {
+            fprintf(stderr, "[lf_network_read] recvfrom failed: %s\n", strerror(errno));
+            goto fail;
+        }
+    } while (--retries > 0);
+
     if (e < 0) {
-        perror("[lf_network_read] recvfrom failed");
-        fprintf(stderr, "[lf_network_read] recvfrom() returned %zd\n", e);
+        fprintf(stderr, "[lf_network_read] recvfrom failed after %d retries: %s\n", 5, strerror(errno));
         goto fail;
     }
+
+    // Log raw response bytes
+    fprintf(stderr, "[lf_network_read] Raw response (%zd bytes): ", e);
+    for (ssize_t i = 0; i < e; i++) {
+        fprintf(stderr, "0x%02x ", ((uint8_t *)dst)[i]);
+    }
+    fprintf(stderr, "\n");
 
     // Always update ctx->addr to the responding sender
     fprintf(stderr, "[lf_network_read] Updating ctx->addr from received packet.\n");
@@ -99,10 +122,6 @@ int lf_network_read(struct _lf_device *device, void *dst, uint32_t length) {
 fail:
     return lf_error;
 }
-
- 
-
-
 
 int lf_network_write(struct _lf_device *device, void *src, uint32_t length) {
     lf_assert(device, E_NULL, "invalid device");

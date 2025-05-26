@@ -6,6 +6,7 @@
 __attribute__((visibility("default")))
 LF_FUNC lf_return_t fvm_test(void) {
     printf("Running inside FVM! Hello World from Flipper Engineering!\n");
+    fflush(stdout);
     return 0;
 }
 
@@ -13,13 +14,12 @@ __attribute__((used))
 static void *__fvm_test_ptr = fvm_test;
 
 __attribute__((visibility("default")))
-//  array that stores the function pointers that the module exports for remote calling.
 lf_function lf_module_fvm_test_table[] = {
     (lf_function)fvm_test
 };
 
 __attribute__((visibility("default")))
-struct _lf_module _fvm_test_module = {
+struct _lf_module fvm_test_module = {
     .name = "fvm_test",
     .version = 1,
     .idx = UINT16_MAX,

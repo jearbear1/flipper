@@ -91,7 +91,7 @@ int lf_invoke(struct _lf_device *device, const char *module, lf_function functio
     lf_assert(e, E_ENDPOINT, "Failed to receive message from the device '%s'.", device->name);
 
     lf_debug_result(&result);
-    lf_assert(result.error == E_OK, result.error, "An error occured on the device '%s':", device->name);
+    lf_assert(result.error == E_OK, result.error, "An error occurred on the device '%s':", device->name);
 
     *retval = result.value;
 
@@ -120,7 +120,9 @@ int lf_invoke_by_index(struct _lf_device *device, const char *module, uint8_t in
 
     m = dyld_module(device, module);
     lf_assert(m, E_MODULE, "No counterpart found for module '%s'.", module);
-    lf_assert(index < m->length, E_FMR, "Invalid function index %d for module '%s' (max %zu)", index, module, m->length);
+
+    // Skip client-side table check for remote devices
+    // lf_assert(index < m->length, E_FMR, "Invalid function index %d for module '%s' (max %zu)", index, module, m->length);
 
     hdr->magic = FMR_MAGIC_NUMBER;
     hdr->len = sizeof(*hdr) + sizeof(*call);
