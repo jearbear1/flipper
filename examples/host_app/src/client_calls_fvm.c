@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
-#include <unistd.h>
+#include <unistd.h> // <-- Required for recvfrom
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <signal.h>
@@ -27,6 +27,7 @@ int main(int argc, char *argv[]) {
     int port = -1;
     int port_from_file = 0;
 
+    // Try to read from /tmp/fvm.port
     FILE *pf = fopen("/tmp/fvm.port", "r");
     if (pf) {
         fscanf(pf, "%d", &port);
@@ -43,6 +44,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
         
+    // Override port with with Command Line Interface if provided
     if (argc > 2) {
         port = atoi(argv[2]);
         printf("[client] Using provided port: %d\n", port);
