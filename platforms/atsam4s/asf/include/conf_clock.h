@@ -61,13 +61,13 @@
 
 // ===== System Clock (MCK) Prescaler Options   (Fmck = Fsys / (SYSCLK_PRES))
 //#define CONFIG_SYSCLK_PRES          SYSCLK_PRES_1
-#define CONFIG_SYSCLK_PRES          SYSCLK_PRES_2
+//#define CONFIG_SYSCLK_PRES          SYSCLK_PRES_2
 //#define CONFIG_SYSCLK_PRES          SYSCLK_PRES_4
 //#define CONFIG_SYSCLK_PRES          SYSCLK_PRES_8
 //#define CONFIG_SYSCLK_PRES          SYSCLK_PRES_16
 //#define CONFIG_SYSCLK_PRES          SYSCLK_PRES_32
 //#define CONFIG_SYSCLK_PRES          SYSCLK_PRES_64
-//#define CONFIG_SYSCLK_PRES          SYSCLK_PRES_3
+#define CONFIG_SYSCLK_PRES            SYSCLK_PRES_3
 
 // ===== PLL0 (A) Options   (Fpll = (Fclk * PLL_mul) / PLL_div)
 // Use mul and div effective values here.

@@ -190,56 +190,56 @@ static inline void genclk_enable_source(enum genclk_source e_src)
 	case GENCLK_PCK_SRC_SLCK_RC:
 		if (!osc_is_ready(OSC_SLCK_32K_RC)) {
 			osc_enable(OSC_SLCK_32K_RC);
-			osc_wait_ready(OSC_SLCK_32K_RC);
+			while (!osc_is_ready(OSC_SLCK_32K_RC));
 		}
 		break;
 
 	case GENCLK_PCK_SRC_SLCK_XTAL:
 		if (!osc_is_ready(OSC_SLCK_32K_XTAL)) {
 			osc_enable(OSC_SLCK_32K_XTAL);
-			osc_wait_ready(OSC_SLCK_32K_XTAL);
+			while (!osc_is_ready(OSC_SLCK_32K_XTAL));
 		}
 		break;
 
 	case GENCLK_PCK_SRC_SLCK_BYPASS:
 		if (!osc_is_ready(OSC_SLCK_32K_BYPASS)) {
 			osc_enable(OSC_SLCK_32K_BYPASS);
-			osc_wait_ready(OSC_SLCK_32K_BYPASS);
+			while (!osc_is_ready(OSC_SLCK_32K_BYPASS));
 		}
 		break;
 
 	case GENCLK_PCK_SRC_MAINCK_4M_RC:
 		if (!osc_is_ready(OSC_MAINCK_4M_RC)) {
 			osc_enable(OSC_MAINCK_4M_RC);
-			osc_wait_ready(OSC_MAINCK_4M_RC);
+			while (!osc_is_ready(OSC_MAINCK_4M_RC));
 		}
 		break;
 
 	case GENCLK_PCK_SRC_MAINCK_8M_RC:
 		if (!osc_is_ready(OSC_MAINCK_8M_RC)) {
 			osc_enable(OSC_MAINCK_8M_RC);
-			osc_wait_ready(OSC_MAINCK_8M_RC);
+			while (!osc_is_ready(OSC_MAINCK_8M_RC));
 		}
 		break;
 
 	case GENCLK_PCK_SRC_MAINCK_12M_RC:
 		if (!osc_is_ready(OSC_MAINCK_12M_RC)) {
 			osc_enable(OSC_MAINCK_12M_RC);
-			osc_wait_ready(OSC_MAINCK_12M_RC);
+			while (!osc_is_ready(OSC_MAINCK_12M_RC));
 		}
 		break;
 
 	case GENCLK_PCK_SRC_MAINCK_XTAL:
 		if (!osc_is_ready(OSC_MAINCK_XTAL)) {
 			osc_enable(OSC_MAINCK_XTAL);
-			osc_wait_ready(OSC_MAINCK_XTAL);
+			while (!osc_is_ready(OSC_MAINCK_XTAL));
 		}
 		break;
 
 	case GENCLK_PCK_SRC_MAINCK_BYPASS:
 		if (!osc_is_ready(OSC_MAINCK_BYPASS)) {
 			osc_enable(OSC_MAINCK_BYPASS);
-			osc_wait_ready(OSC_MAINCK_BYPASS);
+			while (!osc_is_ready(OSC_MAINCK_BYPASS));
 		}
 		break;
 

@@ -29,6 +29,7 @@
         "socket.h": "c",
         "in.h": "c",
         "dlfcn.h": "c",
-        "lf_config.h": "c"
+        "lf_config.h": "c",
+        "conf_clock.h": "c"
     }
 }

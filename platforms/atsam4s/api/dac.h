@@ -13,7 +13,7 @@ int dac_init_module(void);
 int dac_configure(void);
 int dac_enable_channels(int);
 int dac_set_channels(int);
-int dac_write(void);
+int dac_write(uint32_t data);
 int dac_trigger0(void);
 int dac_cleanup(void);
 

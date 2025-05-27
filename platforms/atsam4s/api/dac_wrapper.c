@@ -1,3 +1,4 @@
+#include <error.h>
 #include "dac.h"
 
 // Wrapper functions (convert from raw args to strongly typed calls)
@@ -20,8 +21,10 @@ LF_FUNC lf_return_t _dac_set_channels(const void *args) {
 }
 
 LF_FUNC lf_return_t _dac_write(const void *args) {
-    (void)args;
-    return dac_write();
+    // to prevent dereferencing NULL arges
+    if (!args) return lf_error;
+    uint32_t data = *(const uint32_t *)args;
+    return dac_write(data);
 }
 
 LF_FUNC lf_return_t _dac_cleanup(const void *args) {
