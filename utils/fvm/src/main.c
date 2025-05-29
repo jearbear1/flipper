@@ -85,8 +85,8 @@ int main(int argc, char *argv[]) {
             lf_assert(dlm, E_NULL, "failed to open module '%s'.", lib);
 
             char module_sym[32];
-            snprintf(module_sym, sizeof(module_sym), "%s_module", module);
-
+            snprintf(module_sym, sizeof(module_sym), "%s", module);
+            
             struct _lf_module *m = dlsym(dlm, module_sym);
             lf_assert(m, E_NULL, "failed to read symbol '%s' from '%s'.", module_sym, lib);
             printf("Successfully loaded symbol '%s'.", module_sym);

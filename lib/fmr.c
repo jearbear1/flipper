@@ -39,7 +39,7 @@ int fmr_perform(struct _lf_device *device, struct _fmr_packet *packet) {
     struct _fmr_header *hdr = &packet->hdr;
     struct _fmr_result result = {0};
     lf_return_t retval = 0;
-    lf_crc_t _crc, crc;
+    lf_crc_t crc, _crc;
     int e = E_UNIMPLEMENTED;
 
     lf_assert(hdr->magic == FMR_MAGIC_NUMBER, E_CHECKSUM, "invalid magic number");
@@ -47,7 +47,11 @@ int fmr_perform(struct _lf_device *device, struct _fmr_packet *packet) {
     _crc = hdr->crc;
     hdr->crc = 0;
     lf_crc(packet, hdr->len, &crc);
-    lf_assert(!memcmp(&_crc, &crc, sizeof(crc)), E_CHECKSUM, "checksums do not match (0x%04x/0x04x)", _crc, crc);
+    if (memcmp(&_crc, &crc, sizeof(crc))) {
+        lf_error_set(E_CHECKSUM);
+        fprintf(stderr, "[fmr_perform] Checksums do not match (0x%04x/0x%04x)\n", _crc, crc);
+        goto fail;
+    }
 
     lf_error_set(E_OK);
 
@@ -66,7 +70,7 @@ int fmr_perform(struct _lf_device *device, struct _fmr_packet *packet) {
 
     fprintf(stderr, "[fmr_perform] Dispatching packet type=%d\n", hdr->type);
     int dispatch_result = fmr_registry[hdr->type](device, packet, &retval);
-    if (!dispatch_result) {
+    if (dispatch_result != lf_success) {
         lf_debug("[fmr_perform] Dispatcher for type %d failed", hdr->type);
         result.error = E_FMR;
     } else {
@@ -83,7 +87,7 @@ send_result:
     return e;
 }
 
-/* Helper struct definitions */
+// Helper struct definitions
 typedef uint32_t lf_size_t;
 
 struct _fmr_rpc {
@@ -108,19 +112,34 @@ extern struct _lf_module *lf_module_get_by_name(struct _lf_device *device, const
 
 /* fmr_rpc: Dispatches a remote procedure call to a target module and function */
 static int fmr_rpc(struct _lf_device *device, const struct _fmr_packet *packet, lf_return_t *retval) {
-    const uint8_t *data = (const uint8_t *)(packet + 1);
-    struct _fmr_rpc *rpc = (struct _fmr_rpc *)data;
-
-    struct _lf_ll *node = device->modules;
-    for (uint8_t i = 0; node && i < rpc->module; i++) node = node->next;
-    struct _lf_module *module = node ? (struct _lf_module *)node->item : NULL;
-
-    if (!module || !module->table || rpc->index >= module->length || !module->table[rpc->index]) {
-        lf_debug("[fmr_rpc] Invalid module or index %d (max %zu)", rpc->index, module ? module->length : 0);
+    struct _fmr_call *call = &((struct _fmr_call_packet *)packet)->call;
+    fprintf(stderr, "[fmr_rpc] Module index: %u, Function index: %u\n", call->module, call->function);
+    struct _lf_module *module = lf_ll_item(device->modules, call->module);
+    if (!module || call->function >= module->length) {
+        fprintf(stderr, "[fmr_rpc] Invalid module index %u or function index %u (max %u)\n",
+                call->module, call->function, module ? module->length - 1 : 0);
         return lf_error;
     }
-    lf_function fn = module->table[rpc->index];
-    *retval = fn(data + sizeof(struct _fmr_rpc));
+    uint8_t *argv = call->argv;
+    uint8_t i;
+    struct _lf_ll *args = NULL;
+    for (i = 0; i < call->argc; i++) {
+        lf_type type = (call->argt >> (i * 2)) & 0x3;
+        uint8_t size = lf_sizeof(type);
+        struct _lf_arg *arg = malloc(sizeof(struct _lf_arg));
+        if (!arg) {
+            fprintf(stderr, "[fmr_rpc] Failed to allocate argument\n");
+            lf_error_set(E_NULL);
+            lf_ll_release(&args);
+            return lf_error;
+        }
+        arg->type = type;
+        memcpy(&arg->value, argv, size);
+        argv += size;
+        lf_ll_append(&args, arg, free);
+    }
+    *retval = module->table[call->function](args);
+    lf_ll_release(&args);
     return lf_success;
 }
 
@@ -166,7 +185,7 @@ static int fmr_dyld(struct _lf_device *device, const struct _fmr_packet *packet,
     struct _lf_module *module = lf_module_get_by_name(device, name);
     if (!module) {
         fprintf(stderr, "[fmr_dyld] Module '%s' not found\n", name);
-        *retval = 0; // Default to 0 on failure
+        *retval = 0;
         return lf_error;
     }
     *retval = module->idx;

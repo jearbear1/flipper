@@ -52,7 +52,6 @@ make utils
 ```sh
 cd examples/host_app
 make clean
-make
 ```
 
 #### Next Step
@@ -60,13 +59,9 @@ make
 must use gcc here because the inline attributes fail to build with clang
 
 ```sh
-gcc-12 \
-  -I../../platforms/posix/include \
-  -I../../lib \
-  -I../../.build/include \
-  -L../../.build/libflipper \
-  -lflipper \
-  src/client_calls_fvm.c -o src/call_fvm
+make module MODULE=fvm_test 
+make call_fvm
+
 ```
 #### Next Step
 

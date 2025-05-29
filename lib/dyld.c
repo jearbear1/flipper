@@ -9,7 +9,7 @@ void print_module_list(struct _lf_ll *list) {
     int i = 0;
     while (list) {
         struct _lf_module *m = list->item;
-        fprintf(stderr, "  [%d] name=%s idx=%d\n", i++, m ? m->name : "(null)", m ? m->idx : -1);
+        fprintf(stderr, "  [%d] name=%s idx=%u\n", i++, m ? m->name : "(null)", m ? m->idx : 0);
         list = list->next;
     }
 }
@@ -58,33 +58,41 @@ int dyld_load(struct _lf_device *device, void *src, size_t len) {
 struct _lf_module *dyld_module(struct _lf_device *device, const char *module) {
     lf_assert(device, E_NULL, "invalid device");
     lf_assert(module, E_NULL, "invalid module");
-
     fprintf(stderr, "[dyld_module] Incoming query for module = '%s'\n", module);
+    fprintf(stderr, "[dyld_module] Module list count: %zu\n", lf_ll_count(device->modules));
 
     size_t count = lf_ll_count(device->modules);
     for (size_t i = 0; i < count; i++) {
         struct _lf_module *m = lf_ll_item(device->modules, i);
         fprintf(stderr, "[dyld_module] Comparing '%s' to '%s'\n", m->name, module);
-        fprintf(stderr, "[dyld_module] Comparing '%s' (strlen=%zu) to '%s' (strlen=%zu)\n",
-                m->name, strlen(m->name), module, strlen(module));
-        if (m && m->name && strcmp(m->name, module) == 0)
+        if (m && strcmp(m->name, module) == 0)
             return m;
     }
 
-    // Fallback: Attempt to resolve and register
     uint16_t idx;
-    lf_assert(lf_dyld_dyn_sym_lookup(device, module, &idx), E_MODULE,
-              "Failed to find counterpart for module '%s' on device '%s'.", module, device->name);
+    int e = lf_dyld_dyn_sym_lookup(device, module, &idx);
+    if (e != lf_success) {
+        lf_error_set(E_MODULE);
+        fprintf(stderr, "[dyld_module] Failed to find counterpart for module '%s' on device '%s'.\n", module, device->name);
+        return NULL;
+    }
 
     struct _lf_module *m = lf_module_create(module, idx);
-    lf_assert(m, E_NULL, "Failed to create new module '%s'.", module);
+    lf_assert(m, E_NULL, "failed to create module for '%s'", module);
 
     memset(m->name, 0, sizeof(m->name));
     strncpy(m->name, module, sizeof(m->name) - 1);
     m->name[sizeof(m->name) - 1] = '\0';
 
-    int e = dyld_register(device, m);
-    lf_assert(e, E_MODULE, "Failed to register module '%s'.", module);
+    e = dyld_register(device, m);
+    if (e != lf_success) {
+        fprintf(stderr, "[dyld_module] Failed to register module '%s'.\n", module);
+        free(m);
+        lf_error_set(E_MODULE);
+        return NULL;
+    }
+
+    fprintf(stderr, "[dyld_module] Registered module '%s' with idx=%u\n", module, idx);
     return m;
 
 fail:
@@ -100,7 +108,7 @@ struct _lf_module *lf_module_get_by_name(struct _lf_device *device, const char *
     for (size_t i = 0; i < count; i++) {
         struct _lf_module *mod = lf_ll_item(device->modules, i);
         fprintf(stderr, "[lf_module_get_by_name] Checking '%s'\n", mod ? mod->name : "(null)");
-        if (mod && mod->name && strcmp(mod->name, name) == 0) {
+        if (mod && strcmp(mod->name, name) == 0) {
             return mod;
         }
     }
@@ -114,7 +122,7 @@ fail:
  */
 int lf_dyld_dyn_sym_lookup(struct _lf_device *device, const char *module, uint16_t *idx) {
     struct _fmr_packet _packet;
-    memset(&_packet, 0, sizeof(_packet));
+    memset(&_packet, 0, sizeof(_packet)); // Clear the entire packet buffer
 
     struct _fmr_dyld_packet *packet = (struct _fmr_dyld_packet *)&_packet;
     struct _fmr_header *hdr = &packet->hdr;
@@ -135,8 +143,14 @@ int lf_dyld_dyn_sym_lookup(struct _lf_device *device, const char *module, uint16
     hdr->len = sizeof(*hdr);
     hdr->type = fmr_dyld_class;
 
-    strncpy(packet->module, module, sizeof(struct _fmr_packet) - sizeof(struct _fmr_dyld_packet));
-    hdr->len += strlen(module) + 1;
+    // Copy module name and ensure null-termination
+    size_t module_len = strlen(module);
+    if (module_len >= LF_MODULE_NAME_MAX) {
+        fprintf(stderr, "[lf_dyld_dyn_sym_lookup] Module name '%s' too long\n", module);
+        return lf_error;
+    }
+    strncpy(packet->module, module, module_len + 1); // Copy including null terminator
+    hdr->len += module_len + 1;
 
     lf_crc(packet, hdr->len, &crc);
     hdr->crc = crc;
@@ -154,7 +168,6 @@ int lf_dyld_dyn_sym_lookup(struct _lf_device *device, const char *module, uint16
     lf_debug("fmr_result=%d", result.error);
     lf_assert(result.error == E_OK, result.error, "Device '%s' returned error %d for module '%s'.", device->name, result.error, module);
 
-    // Temporarily relax UINT16_MAX check for debugging
     if (result.value > UINT16_MAX) {
         fprintf(stderr, "[lf_dyld_dyn_sym_lookup] Warning: module index '%llu' exceeds UINT16_MAX for '%s'\n", result.value, module);
     }
