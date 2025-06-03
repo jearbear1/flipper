@@ -69,17 +69,15 @@ int lf_create_call(lf_module module, lf_function function, lf_type ret, struct _
     call->module = module;
     call->function = 0; // Placeholder for resolved index elsewhere
     call->ret = ret;
-    call->argt = 0;
     call->argc = args ? lf_ll_count(args) : 0;
 
     uint8_t *dst = call->argv;
-    size_t payload_size = sizeof(struct _fmr_call);
+    size_t payload_size = sizeof(struct _fmr_call) + (call->argc * sizeof(lf_type));
     struct _lf_ll *n = args;
     for (lf_argc i = 0; i < call->argc; i++) {
         struct _lf_arg *arg = (struct _lf_arg *)n->item;
-        call->argt |= ((arg->type & 0xf) << (i * 4));
+        call->arg_types[i] = arg->type; // Store the full lf_type
         size_t arg_size = lf_sizeof(arg->type);
-        // check in to ensure the total packet size doesn’t exceed FMR_PACKET_SIZE:
         if (payload_size + arg_size > FMR_PACKET_SIZE - sizeof(struct _fmr_header)) {
             lf_debug("Argument list too large for packet");
             return lf_error;

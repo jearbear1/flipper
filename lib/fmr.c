@@ -35,6 +35,8 @@ void fmr_init(void) {
     fmr_register(fmr_free_class,   fmr_free);
 }
 
+struct _fmr_packet *current_packet = NULL;
+
 int fmr_perform(struct _lf_device *device, struct _fmr_packet *packet) {
     struct _fmr_header *hdr = &packet->hdr;
     struct _fmr_result result = {0};
@@ -69,7 +71,9 @@ int fmr_perform(struct _lf_device *device, struct _fmr_packet *packet) {
     }
 
     fprintf(stderr, "[fmr_perform] Dispatching packet type=%d\n", hdr->type);
+    current_packet = packet; // Set before dispatching
     int dispatch_result = fmr_registry[hdr->type](device, packet, &retval);
+    current_packet = NULL; // Clear after dispatching
     if (dispatch_result != lf_success) {
         lf_debug("[fmr_perform] Dispatcher for type %d failed", hdr->type);
         result.error = E_FMR;
@@ -116,7 +120,7 @@ static int fmr_rpc(struct _lf_device *device, const struct _fmr_packet *packet, 
     fprintf(stderr, "[fmr_rpc] Module index: %u, Function index: %u\n", call->module, call->function);
     struct _lf_module *module = lf_ll_item(device->modules, call->module);
     if (!module || call->function >= module->length) {
-        fprintf(stderr, "[fmr_rpc] Invalid module index %u or function index %u (max %u)\n",
+        fprintf(stderr, "[fmr_rpc] Invalid module index %u or function index %u (max %zu)\n",
                 call->module, call->function, module ? module->length - 1 : 0);
         return lf_error;
     }
@@ -124,7 +128,7 @@ static int fmr_rpc(struct _lf_device *device, const struct _fmr_packet *packet, 
     uint8_t i;
     struct _lf_ll *args = NULL;
     for (i = 0; i < call->argc; i++) {
-        lf_type type = (call->argt >> (i * 2)) & 0x3;
+        lf_type type = call->arg_types[i]; // Use the full lf_type from the array
         uint8_t size = lf_sizeof(type);
         struct _lf_arg *arg = malloc(sizeof(struct _lf_arg));
         if (!arg) {
@@ -136,7 +140,12 @@ static int fmr_rpc(struct _lf_device *device, const struct _fmr_packet *packet, 
         arg->type = type;
         memcpy(&arg->value, argv, size);
         argv += size;
-        lf_ll_append(&args, arg, free);
+        if (lf_ll_append(&args, arg, free) != lf_success) {
+            fprintf(stderr, "[fmr_rpc] Failed to append argument %u\n", i);
+            free(arg);
+            lf_ll_release(&args);
+            return lf_error;
+        }
     }
     *retval = module->table[call->function](args);
     lf_ll_release(&args);

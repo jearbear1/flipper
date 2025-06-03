@@ -28,7 +28,7 @@ typedef uint8_t lf_argc;
 
 /* The maximum number of arguments that can be encoded into a packet. */
 #define FMR_MAX_ARGC 16
-/* Used to hold encoded prameter types within invocation metadata.
+/* Used to hold encoded parameter types within invocation metadata.
    NOTE: This type must be capable of encoding the exact number of bits
          given by (FMR_MAX_ARGC * 2).
 */
@@ -39,26 +39,32 @@ typedef uint32_t lf_types;
 /* Converts a C type into a signed lf_type. */
 #define lf_stype(type) ((1 << 3) | lf_utype(type))
 
-/* Enumerates the basic type signatures an argument can be classified as. */
+/* Enumerates the basic type signatures an argument can be classified as.
+   Note: Type values are adjusted to align with client expectations:
+   - lf_uint_t (0) replaces lf_uint8_t's original assignment.
+   - lf_ptr_t (2) aligns with client's uptr, though client sends 2.
+   - lf_uint64_t (3) aligns with client's uint64, though client sends 3 (mismatch with 7).
+   - Signed types start at 8 to avoid overlap. */
 enum {
-    lf_void_t = 2,  // 2
-    lf_int_t = 4,   // 4
-    lf_ptr_t = 6,   // 6
+    lf_uint_t = 0,       // Generic unsigned int (matches client's uint)
+    lf_ptr_t = 2,        // Pointer type (matches client's uptr)
+    lf_uint64_t = 3,     // 64-bit unsigned int (adjusted to match client's uint64)
+    lf_void_t = 6,       // Void type
+    lf_int_t = 4,        // Generic signed int
 
-    /* Unsigned types. */
-    lf_uint8_t = lf_utype(uint8_t),    // 0
-    lf_uint16_t = lf_utype(uint16_t),  // 1
-    lf_uint32_t = lf_utype(uint32_t),  // 3
-    lf_uint64_t = lf_utype(uint64_t),  // 7
+    /* Unsigned types with adjusted values to avoid conflicts. */
+    lf_uint8_t = 16,     // 8-bit unsigned int
+    lf_uint16_t = 17,    // 16-bit unsigned int
+    lf_uint32_t = 19,    // 32-bit unsigned int
 
     /* Signed types. */
-    lf_int8_t = lf_stype(int8_t),    // 8
-    lf_int16_t = lf_stype(int16_t),  // 9
-    lf_int32_t = lf_stype(int32_t),  // 11
-    lf_int64_t = lf_stype(int64_t),  // 15
+    lf_int8_t = 24,      // 8-bit signed int
+    lf_int16_t = 25,     // 16-bit signed int
+    lf_int32_t = 27,     // 32-bit signed int
+    lf_int64_t = 31,     // 64-bit signed int
 
-    /* Max type is 15. */
-    lf_max_t = 15
+    /* Max type is 31. */
+    lf_max_t = 31
 };
 
 /* A type used to reference the values in the enum above. */
@@ -84,17 +90,19 @@ int lf_sizeof(lf_type type);
 /* Gives the 'lf_va' for a given integer's value. */
 #define lf_int(arg) lf_intx(lf_int_t, arg)
 /* Gives the 'lf_va' for a given 8-bit integer's value. */
-#define lf_int8(arg) lf_intx(lf_int8_t, (uint8_t)arg)
+#define lf_int8(arg) lf_intx(lf_int8_t, (int8_t)arg)
 /* Gives the 'lf_va' for a given 16-bit integer's value. */
-#define lf_int16(arg) lf_intx(lf_int16_t, (uint16_t)arg)
+#define lf_int16(arg) lf_intx(lf_int16_t, (int16_t)arg)
 /* Gives the 'lf_va' for a given 32-bit integer's value. */
-#define lf_int32(arg) lf_intx(lf_int32_t, (uint32_t)arg)
+#define lf_int32(arg) lf_intx(lf_int32_t, (int32_t)arg)
 /* Gives the 'lf_va' for a given 8-bit integer's value. */
 #define lf_uint8(arg) lf_intx(lf_uint8_t, (uint8_t)arg)
 /* Gives the 'lf_va' for a given 16-bit integer's value. */
 #define lf_uint16(arg) lf_intx(lf_uint16_t, (uint16_t)arg)
 /* Gives the 'lf_va' for a given 32-bit integer's value. */
 #define lf_uint32(arg) lf_intx(lf_uint32_t, (uint32_t)arg)
+/* Gives the 'lf_va' for a given 64-bit integer's value. */
+#define lf_uint64(arg) lf_intx(lf_uint64_t, (uint64_t)arg)
 /* Gives the 'lf_va' for a pointer. */
 #define lf_ptr(arg) lf_intx(lf_ptr_t, (uintptr_t)arg)
 /* Creates an 'lf_va' from a C variable. */
@@ -143,8 +151,8 @@ struct LF_PACKED _fmr_call {
     uint8_t module;
     uint8_t function;
     lf_type ret;
-    lf_types argt;
     lf_argc argc;
+    lf_type arg_types[FMR_MAX_ARGC]; // Array to store each argument's type
     uint8_t argv[];
 };
 
@@ -194,7 +202,6 @@ struct _lf_ll *fmr_build(int argc, ...);
 
 /* Execute the Flipper Message Runtime */
 int fmr_perform(struct _lf_device *device, struct _fmr_packet *packet);
-
 
 int fmr_register(fmr_class type, int (*handler)(struct _lf_device *, const struct _fmr_packet *, lf_return_t *));
 

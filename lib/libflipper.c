@@ -10,7 +10,7 @@ const char *lf_get_git_hash(void) {
     return lf_git_hash;
 }
 
-// Setter for the lf_current_device global. 
+// Setter for the lf_current_device global.
 static void lf_set_current_device(struct _lf_device *device) {
     lf_current_device = device;
 }
@@ -22,8 +22,8 @@ static struct _lf_device *lf_get_current_device(void) {
 
 int lf_attach(void) {
 #ifdef LF_POSIX
-    struct _lf_ll *usb_devices = lf_libusb_get_devices();
-    lf_ll_concat(&lf_attached_devices, usb_devices);
+    struct _lf_ll *usb_device = lf_libusb_get_devices();
+    lf_ll_concat(&lf_attached_devices, usb_device);
     return lf_success;
 fail:
 #endif
@@ -123,45 +123,40 @@ int lf_invoke_by_index(struct _lf_device *device, const char *module, uint8_t in
     m = dyld_module(device, module);
     if (!m) {
         m = lf_module_create(module, module_idx);
-        lf_assert(m, E_NULL, "Failed to create new module '%s'.", module);
+        lf_assert(m->name, E_NULL, "Module name is NULL.");
         memset(m->name, 0, sizeof(m->name));
         strncpy(m->name, module, sizeof(m->name) - 1);
-        m->name[sizeof(m->name) - 1] = '\0';
         e = dyld_register(device, m);
         lf_assert(e == lf_success, E_MODULE, "Failed to register module '%s'.", module);
     }
 
     hdr->magic = FMR_MAGIC_NUMBER;
-    hdr->len = sizeof(*hdr) + sizeof(*call);
-    hdr->type = fmr_rpc_class; // 0
+    hdr->len = sizeof(*hdr) + sizeof(*call) + (args ? lf_ll_count(args) * sizeof(lf_type) : 0);
+    hdr->type = fmr_rpc_class;
 
     call->module = (uint8_t)module_idx;
     call->function = index;
     call->ret = ret;
-    call->argt = 0;
     call->argc = args ? lf_ll_count(args) : 0;
 
+    uint8_t *argv = call->argv;
     if (args) {
         struct _lf_ll *node = args;
-        uint8_t *argv = call->argv;
         uint8_t i = 0;
         while (node && i < call->argc) {
             struct _lf_arg *arg = node->item;
             lf_type type = arg->type;
-            lf_arg value = arg->value;
+            call->arg_types[i] = type; // Store the full lf_type value
             uint8_t size = lf_sizeof(type);
-            memcpy(argv, &value, size);
+            memcpy(argv, &arg->value, size);
             argv += size;
             hdr->len += size;
-            call->argt |= (type << (i * 2));
             node = node->next;
             i++;
         }
     }
 
     lf_crc(packet, hdr->len, &crc);
-    hdr->crc = crc;
-
     fprintf(stderr, "[lf_invoke_by_index] Packet type=%d, module_idx=%u, function_idx=%u\n",
             hdr->type, call->module, call->function);
     lf_debug_packet(&_packet);
@@ -173,8 +168,6 @@ int lf_invoke_by_index(struct _lf_device *device, const char *module, uint8_t in
     lf_assert(e == lf_success, E_ENDPOINT, "Failed to receive message from the device '%s'.", device->name);
 
     lf_debug_result(&result);
-    lf_assert(result.error == E_OK, result.error, "An error occurred on the device '%s':", device->name);
-
     if (retval) *retval = result.value;
 
     return lf_success;

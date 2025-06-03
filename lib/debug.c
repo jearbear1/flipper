@@ -12,24 +12,37 @@ void lf_debug_call(struct _fmr_call *call) {
     printf("  └─module:    0x%x\n", call->module);
     printf("  └─function:  0x%x\n", call->function);
 
-    char *typestrs[] = { "uint8", "uint16", "void", "uint32", "int", "", "ptr", "uint64", "int8", "int16", "", "int32", "", "", "", "int64" };
-    printf("  └─return:    %s\n", typestrs[call->ret & 0xf]);
-    printf("  └─types:     0x%x\n", call->argt);
+    // Type strings for lf_type values (0–31)
+    const char *typestrs[] = {
+        "unknown", "unknown", "void",    "uint64",  "int",     "unknown", "ptr",     "int64",
+        "unknown", "unknown", "unknown", "unknown", "unknown", "unknown", "unknown", "unknown",
+        "uint8",   "uint16",  "unknown", "uint32",  "unknown", "unknown", "unknown", "unknown",
+        "int8",    "int16",   "unknown", "int32",   "unknown", "unknown", "unknown", "unknown"
+    };
+
+    printf("  └─return:    %s\n", typestrs[call->ret]);
     printf("  └─argc:      0x%x (%d arguments)\n", call->argc, call->argc);
+    
+    // Print argument types
+    printf("  └─types:     ");
+    for (lf_argc i = 0; i < call->argc; i++) {
+        printf("%s%s", i > 0 ? ", " : "", typestrs[call->arg_types[i]]);
+    }
+    printf("\n");
 
     printf("args\n");
-    /* Offset pointer for reading each argument. */
+    // Offset pointer for reading each argument
     uint8_t *offset = call->argv;
-    lf_types types = call->argt;
 
     for (lf_argc i = 0; i < call->argc; i++) {
-        lf_type type = types & lf_max_t;
+        lf_type type = call->arg_types[i];
         lf_arg arg = 0;
         memcpy(&arg, offset, lf_sizeof(type));
 
-        printf("  └─ %s%s:   0x%llx\n", (type & (1 << 3)) ? "" : "u", typestrs[type & 0x7], arg);
+        // Print argument with signedness prefix
+        const char *prefix = (type == 3 || type == 6 || type == 16 || type == 17 || type == 19) ? "u" : "";
+        printf("  └─ %s%s:   0x%llx\n", prefix, typestrs[type], arg);
         offset += lf_sizeof(type);
-        types >>= 4;
     }
 
     printf("\n");

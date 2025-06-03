@@ -19,7 +19,7 @@ struct _lf_device *lf_device_create_named(const char *name,
     device->release = release;
 
     /*
-     ero Initialize the name to ensure that the Client and FVM
+     zero Initialize the name to ensure that the Client and FVM
      refer to the same thing. when trying to communicate
      */
     if (name) {

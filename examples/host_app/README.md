@@ -15,7 +15,7 @@ To ensure all the python builds effectively you ust be inside a python environme
 
 ```sh
 source .venv/bin/activate
-pip 3 install pyelftools 
+pip3 install pyelftools 
 ```
 
 #### Next Step
