@@ -1,176 +1,124 @@
-#define _function r5
-#define retv r6
-#define argc r7
-#define argt r8
-#define _argv r9
-#define argi r10
-#define temp r11
-
-/* lf_return_t fmr_call(lf_return_t (* function)(void), lf_type ret, uint8_t argc, uint16_t argt, void *argv); */
-
 .syntax unified
+.thumb
 .global fmr_call
 .thumb_func
+
 fmr_call:
-    /* Push Platform Specific Register, Callee Save Registers and Link Register onto stack */
-    push { r5-r11, lr }
-    /* Save the function address into r5. */
-    mov _function, r0
-    /* Load the return type. */
-    mov retv, r1
-    /* Load the argument count into r7. */
-    mov argc, r2
-    /* Load the argument types into r8. */
-    mov argt, r3
-    /* Load the address of the argument list into r9. */
-    ldr _argv, [sp, #32]
-    /* Clear the argument index register. */
-    mov argi, #0
+    push {r4-r11, lr}
 
-_load:
-    cmp argc, #0
-    beq _call
+    mov r6, r0      // r6 = function
+    mov r7, r1      // r7 = return type
+    mov r8, r2      // r8 = argc
+    mov r9, r4      // r9 = pointer to _fmr_call (for arg_types)
+    mov r10, r5     // r10 = pointer to _lf_ll (argv linked list)
+    mov r11, #0     // r11 = argi
 
-    /* place r8 into temp */
-    mov temp, argt
-    /* encode type with 4 bits register is 32 bits so and with 15 to remove unwanted bits */
-    and temp, 0xF
+load_args:
+    cmp r8, #0
+    beq call_func
 
-    # lf_int8_t
-    cmp temp, #0
-        beq _load_8
-    # lf_int16_t
-    cmp temp, #1
-        beq _load_16
-    # lf_int32_t
-    cmp temp, #3
-        beq _load_32
-    # lf_int_t
-    cmp temp, #4
-        beq _load_ptr
-    # lf_ptr_t
-    cmp temp, #6
-        beq _load_int
-    # lf_int64_t
-    cmp temp, #7
-        beq _load_64
+    // Load arg pointer: _lf_ll->item -> _lf_arg
+    ldr r4, [r10]       // r4 = _lf_ll->item
+    add r10, r10, #12   // advance to next _lf_ll
 
-    b _fail
+    ldr r5, [r4, #4]    // r5 = arg->value (offset 4 bytes)
+    
+    // Load arg type: r9 (call) + 4 (offset) + argi
+    mov r0, r9
+    add r0, r0, #4      // point to arg_types[0]
+    add r0, r0, r11
+    ldrb r1, [r0]       // r1 = type
 
-_load_8:
-    /* Load a byte from the argument list. */
-    ldrb temp, [_argv, #0]
-    /* Increment the argv pointer by one. */
-    add _argv, #1
-    b _load_done
-_load_16:
-    /* Load a halfword from the argument list. */
-    ldrh temp, [_argv, #0]
-    /* Increment the argv pointer by two. */
-    add _argv, #2
-    b _load_done
-_load_32:
-    /* Load a word from the argument list. */
-    ldr temp, [_argv, #0]
-    /* Increment the argv pointer by four. */
-    add _argv, #4
-    b _load_done
-_load_64:
-    b _fail
+    // Decode by type
+    cmp r11, #0
+    beq write_r0
+    cmp r11, #1
+    beq write_r1
+    cmp r11, #2
+    beq write_r2
+    cmp r11, #3
+    beq write_r3
+    b fail              // more than 4 args not supported
 
-_load_int:
-_load_ptr:
-/* Dereference argv pointer, store in temp */
-    ldr temp, [_argv, #0]
-/* Increment the argv pointer by four. */
-    add _argv, #4
+write_r0:
+    mov r0, r5
+    b next_arg
+write_r1:
+    mov r1, r5
+    b next_arg
+write_r2:
+    mov r2, r5
+    b next_arg
+write_r3:
+    mov r3, r5
+    b next_arg
 
-_load_done:
-    /* If the argument index is less than 4, load the argument into the appropriate register. */
-    cmp argi, #0
-        beq _write_r0
-    cmp argi, #1
-        beq _write_r1
-    cmp argi, #2
-        beq _write_r2
-    cmp argi, #3
-        beq _write_r3
-    b _write_stack
+next_arg:
+    add r11, r11, #1
+    sub r8, r8, #1
+    b load_args
 
-_write_r0:
-    mov r0, temp
-    b _write_done
-_write_r1:
-    mov r1, temp
-    b _write_done
-_write_r2:
-    mov r2, temp
-    b _write_done
-_write_r3:
-    mov r3, temp
-    b _write_done
-_write_stack:
-    b _fail
+call_func:
+    blx r6
 
-_write_done:
-    /* shift off the argument types */
-    lsrs argt, #4
-    /* reduce argument count */
-    sub argc, #1
-    /* increase argument index */
-    add argi, #1
-    b _load
+    // Return processing
+    cmp r7, #2
+    beq ret_void
+    cmp r7, #16
+    beq ret_u8
+    cmp r7, #24
+    beq ret_s8
+    cmp r7, #17
+    beq ret_u16
+    cmp r7, #25
+    beq ret_s16
+    cmp r7, #19
+    beq ret_u32
+    cmp r7, #27
+    beq ret_s32
+    cmp r7, #3
+    beq ret_64
+    cmp r7, #4
+    beq ret_64
+    cmp r7, #6
+    beq ret_64
+    cmp r7, #7
+    beq ret_64
+    b fail
 
-_call:
-    /* Jump to the function. */
-    blx _function
-
-_ret:
-    # lf_int8_t
-    cmp retv, #0
-        beq _ret_8
-    # lf_int16_t
-    cmp retv, #1
-        beq _ret_16
-    # lf_void_t
-    cmp retv, #2
-        beq _ret_void
-    # lf_int32_t
-    cmp retv, #3
-        beq _ret_32
-    # lf_int_t
-    cmp retv, #4
-        beq _ret_int
-    # lf_int_t
-    cmp retv, #6
-        beq _ret_ptr
-    # fmr_int
-    cmp retv, #7
-        beq _ret_64
-
-    b _fail
-
-_ret_void:
-    /* clear r0 and r1 */
+ret_void:
     mov r0, #0
     mov r1, #0
-    b _call_done
-_ret_8:
-    b _call_done
-_ret_16:
-    b _call_done
-_ret_int:
-_ret_ptr:
-_ret_32:
-    b _call_done
-_ret_64:
-    b _call_done
+    b done
+ret_u8:
+    and r0, r0, #0xFF
+    b done
+ret_s8:
+    sxtb r0, r0
+    b done
+ret_u16:
+    ldr r4, =0xFFFF // Use a constant loaded into a temporary register r4, then AND with it.
+    and r0, r0, r4
+    b done
+ret_s16:
+    sxth r0, r0
+    b done
+ret_u32:
+    b done
+ret_s32:
+    b done
+ret_64:
+    // EABI dictates:
+    // - r0 = lower 32 bits
+    // - r1 = upper 32 bits
+    // The function we call via `blx r6` is responsible for populating both.
 
-_fail:
+    b done
+
+
+fail:
     mov r0, #-1
     mov r1, #-1
-_call_done:
-    /* take used registers and program counter off of the stack */
-    pop { _function-temp, pc }
 
-.end
+done:
+    pop {r4-r11, pc}

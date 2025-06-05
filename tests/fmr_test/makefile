@@ -20,6 +20,7 @@ MODULE_CFLAGS = \
   -rdynamic \
   -I$(FLIPPER_ROOT)/lib \
   -I$(BUILD_DIR)/include \
+  -Iinclude \
   -I$(FLIPPER_ROOT)/platforms/atsam4s/asf/include \
   -I$(FLIPPER_ROOT)/platforms/posix/include
 

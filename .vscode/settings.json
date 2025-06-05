@@ -30,6 +30,7 @@
         "in.h": "c",
         "dlfcn.h": "c",
         "lf_config.h": "c",
-        "conf_clock.h": "c"
+        "conf_clock.h": "c",
+        "stdint.h": "c"
     }
 }

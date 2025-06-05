@@ -52,7 +52,7 @@ struct _lf_ll *fmr_build(int argc, ...) {
     for (int i = 0; i < argc; i++) {
         lf_type type = va_arg(ap, int);
         lf_arg value = va_arg(ap, lf_arg);
-        if (fmr_append_arg(args, type, value) != lf_success) {
+        if (fmr_append_arg(&args, type, value) != lf_success) {
             lf_ll_release(&args);
             return NULL;
         }
