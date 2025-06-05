@@ -60,6 +60,5 @@ $(BUILD_DIR):
 # Clean generated files specific to fmr_test
 clean:
 	@find src -type f ! -name '*.c' -exec rm -f {} +
-	@rm -f $(CALL_FVM) $(TARGET)
 
 .PHONY: all module call_fvm clean

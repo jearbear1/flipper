@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
         // Function 2: my_lf_uint32_argument_test
         printf("[client] Sending RPC packet to invoke '%s' function 2\n", module_name);
         args = NULL;
-        uint32_t arg2_val = 1;
+        uint32_t arg2_val = 70000;
         struct _lf_arg *arg2 = lf_arg_create(lf_int32_t, (lf_arg)arg2_val); // Use lf_int32_t (27)
         if (!arg2 || lf_ll_append(&args, arg2, free) != lf_success) {
             fprintf(stderr, "[client] Failed to create or append arg for function 2\n");
@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
         // Function 6: my_lf_uint32_result_test
         printf("[client] Sending RPC packet to invoke '%s' function 6\n", module_name);
         args = NULL;
-        uint32_t arg6_val = 42;
+        uint32_t arg6_val = 70000;
         struct _lf_arg *arg6 = lf_arg_create(lf_uint32_t, (lf_arg)arg6_val); // Use lf_uint32_t (19)
         if (!arg6 || lf_ll_append(&args, arg6, free) != lf_success) {
             fprintf(stderr, "[client] Failed to create or append arg for function 9\n");
@@ -287,7 +287,134 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "[client] Failed to invoke %s function 7: error %d\n", module_name, result);
         }
         lf_ll_release(&args);
+    
+        // Function 8: my_lf_int8_argument_test
+        printf("[client] Sending RPC packet to invoke '%s' function 8\n", module_name);
+        args = NULL;
+        int8_t arg8_val = -16;
+        struct _lf_arg *arg8 = lf_arg_create(lf_int8_t, (lf_arg)arg8_val); // Use lf_uint8_t (24)
+        if (!arg8 || lf_ll_append(&args, arg8, free) != lf_success) {
+            fprintf(stderr, "[client] Failed to create or append arg for function 8\n");
+            lf_ll_release(&args);
+            goto cleanup;
+        }
+        expected = 0;
+        result = lf_invoke_by_index(device, module_name, 8, lf_int8_t, &ret_value, args);
+        if (result == lf_success) {
+            printf("[client] %s() function 8 returned: %llu\n", module_name, ret_value);
+            printf("[client] Expected return: %lld, Actual: %lld, %s\n", expected, (int64_t)ret_value,
+                   expected == (int64_t)ret_value ? "PASS" : "FAIL");
+        } else {
+            fprintf(stderr, "[client] Failed to invoke %s function 8: error %d\n", module_name, result);
+        }
+        lf_ll_release(&args);
+    
+        // Function 9: my_lf_int8_result_test
+        printf("[client] Sending RPC packet to invoke '%s' function 9\n", module_name);
+        args = NULL;
+        int8_t arg9_val = -16;
+        struct _lf_arg *arg9 = lf_arg_create(lf_int8_t, (lf_arg)arg9_val); // Use lf_int8_t (24)
+        if (!arg9 || lf_ll_append(&args, arg9, free) != lf_success) {
+            fprintf(stderr, "[client] Failed to create or append arg for function 9\n");
+            lf_ll_release(&args);
+            goto cleanup;
+        }
+        expected = (int64_t)(arg9_val * 2);
+        result = lf_invoke_by_index(device, module_name, 9, lf_int8_t, &ret_value, args);
+        if (result == lf_success) {
+            printf("[client] %s() function 9 returned: %llu\n", module_name, ret_value);
+            printf("[client] Expected return: %lld, Actual: %lld, %s\n", expected, (int64_t)ret_value,
+                   expected == (int64_t)ret_value ? "PASS" : "FAIL");
+        } else {
+            fprintf(stderr, "[client] Failed to invoke %s function 9: error %d\n", module_name, result);
+        }
+        lf_ll_release(&args);
 
+    
+        // Function 10: my_lf_int16_argument_test
+        printf("[client] Sending RPC packet to invoke '%s' function 10\n", module_name);
+        args = NULL;
+        int16_t arg10_val = -4931;
+        struct _lf_arg *arg10 = lf_arg_create(lf_int16_t, (lf_arg)arg10_val); // Use lf_int16_t (25)
+        if (!arg10 || lf_ll_append(&args, arg10, free) != lf_success) {
+            fprintf(stderr, "[client] Failed to create or append arg for function 10\n");
+            lf_ll_release(&args);
+            goto cleanup;
+        }
+        expected = 0;
+        result = lf_invoke_by_index(device, module_name, 10, lf_int8_t, &ret_value, args);
+        if (result == lf_success) {
+            printf("[client] %s() function 10 returned: %llu\n", module_name, ret_value);
+            printf("[client] Expected return: %lld, Actual: %lld, %s\n", expected, (int64_t)ret_value,
+                   expected == (int64_t)ret_value ? "PASS" : "FAIL");
+        } else {
+            fprintf(stderr, "[client] Failed to invoke %s function 10: error %d\n", module_name, result);
+        }
+        lf_ll_release(&args);
+
+        // Function 11: my_lf_int16_result_test
+        printf("[client] Sending RPC packet to invoke '%s' function 11\n", module_name);
+        args = NULL;
+        int16_t arg11_val = -4931;
+        struct _lf_arg *arg11 = lf_arg_create(lf_int16_t, (lf_arg)arg11_val); // Use lf_int16_t (25)
+        if (!arg11 || lf_ll_append(&args, arg11, free) != lf_success) {
+            fprintf(stderr, "[client] Failed to create or append arg for function 11\n");
+            lf_ll_release(&args);
+            goto cleanup;
+        }
+        expected = (int64_t)(arg11_val * 2);
+        result = lf_invoke_by_index(device, module_name, 11, lf_int16_t, &ret_value, args);
+        if (result == lf_success) {
+            printf("[client] %s() function 11 returned: %llu\n", module_name, ret_value);
+            printf("[client] Expected return: %lld, Actual: %lld, %s\n", expected, (int64_t)ret_value,
+                   expected == (int64_t)ret_value ? "PASS" : "FAIL");
+        } else {
+            fprintf(stderr, "[client] Failed to invoke %s function 11: error %d\n", module_name, result);
+        }
+        lf_ll_release(&args);
+    
+        // Function 12: my_lf_int32_argument_test
+        printf("[client] Sending RPC packet to invoke '%s' function 12\n", module_name);
+        args = NULL;
+        int32_t arg12_val = -70000;
+        struct _lf_arg *arg12 = lf_arg_create(lf_int32_t, (lf_arg)arg12_val); // Use lf_int32_t (27)
+        if (!arg12 || lf_ll_append(&args, arg12, free) != lf_success) {
+            fprintf(stderr, "[client] Failed to create or append arg for function 12\n");
+            lf_ll_release(&args);
+            goto cleanup;
+        }
+        expected = 0;
+        result = lf_invoke_by_index(device, module_name, 12, lf_int32_t, &ret_value, args);
+        if (result == lf_success) {
+            printf("[client] %s() function 12 returned: %llu\n", module_name, ret_value);
+            printf("[client] Expected return: %lld, Actual: %lld, %s\n", expected, (int64_t)ret_value,
+                   expected == (int64_t)ret_value ? "PASS" : "FAIL");
+        } else {
+            fprintf(stderr, "[client] Failed to invoke %s function 12: error %d\n", module_name, result);
+        }
+        lf_ll_release(&args);
+
+        // Function 13: my_lf_int32_result_test
+        printf("[client] Sending RPC packet to invoke '%s' function 13\n", module_name);
+        args = NULL;
+        int32_t arg13_val = -70000;
+        struct _lf_arg *arg13 = lf_arg_create(lf_int32_t, (lf_arg)arg13_val); // Use lf_int32_t (27)
+        if (!arg13 || lf_ll_append(&args, arg13, free) != lf_success) {
+            fprintf(stderr, "[client] Failed to create or append arg for function 13\n");
+            lf_ll_release(&args);
+            goto cleanup;
+        }
+        expected = (int64_t)(arg13_val * 2);
+        result = lf_invoke_by_index(device, module_name, 13, lf_int16_t, &ret_value, args);
+        if (result == lf_success) {
+            printf("[client] %s() function 13 returned: %llu\n", module_name, ret_value);
+            printf("[client] Expected return: %lld, Actual: %lld, %s\n", expected, (int64_t)ret_value,
+                   expected == (int64_t)ret_value ? "PASS" : "FAIL");
+        } else {
+            fprintf(stderr, "[client] Failed to invoke %s function 13: error %d\n", module_name, result);
+        }
+        lf_ll_release(&args);
+    
         // Success Cleanup
         printf("[client] FMR tests complete.\n");
         lf_detach(device);

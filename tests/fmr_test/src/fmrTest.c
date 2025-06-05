@@ -118,6 +118,69 @@ LF_FUNC lf_return_t my_lf_int_result_test(struct _lf_ll *args) {
     return (lf_return_t)(unsigned int)doubled;
 }
 
+LF_FUNC lf_return_t my_lf_int8_argument_test(struct _lf_ll *args) {
+    char msg[128];
+    int8_t x;
+    if (extract_arg(args, lf_int8_t, &x) != 0) return lf_error;
+    debug_bytes("Raw int8 bytes", &x, sizeof(x));
+    snprintf(msg, sizeof(msg), "Received int8: %u (0x%02x)\n", x, x);
+    write(STDOUT_FILENO, msg, strlen(msg));
+    return lf_success;
+}
+
+LF_FUNC lf_return_t my_lf_int8_result_test(struct _lf_ll *args) {
+    char msg[128];
+    int8_t x;
+    if (extract_arg(args, lf_int8_t, &x) != 0) return lf_error;
+    debug_bytes("Raw int8 bytes (result)", &x, sizeof(x));
+    int8_t doubled = x * 2;
+    snprintf(msg, sizeof(msg), "Returning int8 result for: %u (0x%02x), doubled: %u (0x%02x)\n", x, x, doubled, doubled);
+    write(STDOUT_FILENO, msg, strlen(msg));
+    return (lf_return_t)doubled;
+}
+
+LF_FUNC lf_return_t my_lf_int16_argument_test(struct _lf_ll *args) {
+    char msg[128];
+    int16_t x;
+    if (extract_arg(args, lf_int16_t, &x) != 0) return lf_error;
+    debug_bytes("Raw int16 bytes", &x, sizeof(x));
+    snprintf(msg, sizeof(msg), "Received int16: %u (0x%02x)\n", x, x);
+    write(STDOUT_FILENO, msg, strlen(msg));
+    return lf_success;
+}
+
+LF_FUNC lf_return_t my_lf_int16_result_test(struct _lf_ll *args) {
+    char msg[128];
+    int16_t x;
+    if (extract_arg(args, lf_int16_t, &x) != 0) return lf_error;
+    debug_bytes("Raw int16 bytes (result)", &x, sizeof(x));
+    int16_t doubled = x * 2;
+    snprintf(msg, sizeof(msg), "Returning int16 result for: %u (0x%02x), doubled: %u (0x%02x)\n", x, x, doubled, doubled);
+    write(STDOUT_FILENO, msg, strlen(msg));
+    return (lf_return_t)doubled;
+}
+
+LF_FUNC lf_return_t my_lf_int32_argument_test(struct _lf_ll *args) {
+    char msg[128];
+    int32_t x;
+    if (extract_arg(args, lf_int32_t, &x) != 0) return lf_error;
+    debug_bytes("Raw int32 bytes", &x, sizeof(x));
+    snprintf(msg, sizeof(msg), "Received int32: %u (0x%02x)\n", x, x);
+    write(STDOUT_FILENO, msg, strlen(msg));
+    return lf_success;
+}
+
+LF_FUNC lf_return_t my_lf_int32_result_test(struct _lf_ll *args) {
+    char msg[128];
+    int32_t x;
+    if (extract_arg(args, lf_int32_t, &x) != 0) return lf_error;
+    debug_bytes("Raw int32 bytes (result)", &x, sizeof(x));
+    int32_t doubled = x * 2;
+    snprintf(msg, sizeof(msg), "Returning int32 result for: %u (0x%02x), doubled: %u (0x%02x)\n", x, x, doubled, doubled);
+    write(STDOUT_FILENO, msg, strlen(msg));
+    return (lf_return_t)doubled;
+}
+
 __attribute__((visibility("default")))
 lf_function lf_module_fmrTest_table[] = {
     (lf_function)my_lf_uint8_argument_test,
@@ -128,6 +191,12 @@ lf_function lf_module_fmrTest_table[] = {
     (lf_function)my_lf_uint16_result_test,
     (lf_function)my_lf_uint32_result_test,
     (lf_function)my_lf_int_result_test,
+    (lf_function)my_lf_int8_argument_test,
+    (lf_function)my_lf_int8_result_test,
+    (lf_function)my_lf_int16_argument_test,
+    (lf_function)my_lf_int16_result_test,
+    (lf_function)my_lf_int32_argument_test,
+    (lf_function)my_lf_int32_result_test,
 };
 
 __attribute__((visibility("default")))
