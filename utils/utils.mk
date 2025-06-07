@@ -6,6 +6,7 @@ LD = /usr/bin/clang
 OBJCOPY =
 OBJDUMP =
 
+# -------- fdfu -------- #
 DEPENDENCIES = libflipper
 INC_DIRS = $(BUILD)/include
 SRC_DIRS = utils/fdfu/src
@@ -13,15 +14,16 @@ LDFLAGS  = -L$(BUILD)/libflipper -lflipper
 
 $(eval $(call ADD_TARGET,fdfu))
 
+# -------- fdebug -------- #
 DEPENDENCIES = libflipper
 INC_DIRS = $(BUILD)/include lib platforms/atmegau2/include
 SRC_DIRS = utils/fdebug/src lib
 CFLAGS   = $(shell pkg-config --cflags libusb-1.0) $(addprefix -I,$(INC_DIRS))
 LDFLAGS  = -L$(BUILD)/libflipper -lflipper $(shell pkg-config --libs libusb-1.0)
 
-
 $(eval $(call ADD_TARGET,fdebug))
 
+# -------- fload -------- #
 DEPENDENCIES = libflipper
 INC_DIRS = $(BUILD)/include
 SRC_DIRS = utils/fload/src
@@ -29,11 +31,17 @@ LDFLAGS  = -L$(BUILD)/libflipper -lflipper
 
 $(eval $(call ADD_TARGET,fload))
 
+# -------- fvm -------- #
 DEPENDENCIES = libflipper
-INC_DIRS = $(BUILD)/include lib platforms/atsam4s platforms/atsam4s/include platforms/posix/include
-SRC_DIRS = utils/fvm/src lib
+INC_DIRS = $(BUILD)/include \
+           lib \
+           platforms/atsam4s \
+           platforms/atsam4s/include \
+           platforms/posix/include \
+           utils/fvm/src/api
+SRC_DIRS = utils/fvm/src utils/fvm/src/api lib
 CFLAGS  += $(addprefix -I,$(INC_DIRS))
-LDFLAGS  = -L$(BUILD)/libflipper -lflipper -ldl
+LDFLAGS = -L$(BUILD)/libflipper -lflipper -ldl -Wl,-rpath,@executable_path/../libflipper
 
 $(eval $(call ADD_TARGET,fvm))
 
@@ -41,8 +49,6 @@ $(eval $(call ADD_TARGET,fvm))
 
 .PHONY: utils install-utils uninstall-utils clean
 
-# $(BUILD)/fdfu/fdfu
-# $(BUILD)/fdebug/fdebug
 utils: $(BUILD)/fload/fload $(BUILD)/fvm/fvm
 
 all:: utils

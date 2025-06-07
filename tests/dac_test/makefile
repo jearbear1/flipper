@@ -1,36 +1,57 @@
-##
-## Makefile for dacTest
-##
+# Compiler (adjust if needed)
+CC = gcc-12
 
-# This sets the name of the Flipper module being built
-MODULE = dacTest
+# Module name
+MODULE ?= dacTest
 
-# This next line *MUST* come after MODULE has been set
-include flipper.mk
+# Paths (relative to Makefile location, assuming fmr_test/ subdirectory)
+FLIPPER_ROOT = $(realpath $(CURDIR)/../../)
+BUILD_DIR = $(FLIPPER_ROOT)/.build
+TARGET = $(BUILD_DIR)/$(MODULE).so
+CALL_FVM = host/call_fvm
+CLIENT_SRC = host/main.c
 
-COMPILER_PREFIX   = arm-none-eabi-
+# Compilation flags for the client
+CFLAGS = \
+  -Wall \
+  -I$(FLIPPER_ROOT)/lib \
+  -I$(BUILD_DIR)/include \
+  -I$(FLIPPER_ROOT)/platforms/atsam4s/asf/include \
+  -I$(FLIPPER_ROOT)/platforms/posix/include
 
-GEN = api.mk
-INC_DIRS = include
-SRC_DIRS = src
-CFLAGS = -I/usr/local/include
-LDFLAGS = -Wl,-T /usr/local/share/flipper/ram.ld \
-           -Wl,-R /usr/local/share/flipper/platforms/atsam4s.elf \
+# Linker flags (shared across module and client)
+LDFLAGS = \
+  -L$(BUILD_DIR)/libflipper \
+  -Wl,-rpath,$(BUILD_DIR)/libflipper \
+  -lflipper
 
-$(eval $(call ADD_TARGET,dacTest))
+# Default target
+all: call_fvm
 
-INC_DIRS = include
-SRC_DIRS = host $(BUILD)/dacTest/gen/api
-CFLAGS = -I/usr/local/include -I$(BUILD)/dacTest/gen/api
-LDFLAGS = -L/usr/local/lib -lflipper
+# Build the client
+call_fvm: $(CALL_FVM)
 
-$(eval $(call ADD_TARGET,dacTest_host))
+$(CALL_FVM): $(CLIENT_SRC)
+	$(CC) $(CFLAGS) -D FLIPPER_PLATFORM_POSIX $(CLIENT_SRC) -o $@ $(LDFLAGS)
 
-INC_DIRS = include
-SRC_DIRS = src $(BUILD)/dacTest/gen/api
-CFLAGS = -I/usr/local/include -I$(BUILD)/dacTest/gen/api
-LDFLAGS = -L/usr/local/lib -lflipper
+# Alternate manual client build target
+build_client:
+	$(CC) -o call_fvm host/main.c $(FLIPPER_ROOT)/utils/fvm/src/api/fvm_dac_module.c \
+	  -I$(FLIPPER_ROOT)/lib \
+	  -I$(BUILD_DIR)/include \
+	  -I$(FLIPPER_ROOT)/platforms/atsam4s/asf/include \
+	  -I$(FLIPPER_ROOT)/platforms/posix/include \
+	  -D FLIPPER_PLATFORM_POSIX \
+	  -L$(BUILD_DIR)/libflipper \
+	  -Wl,-rpath,$(BUILD_DIR)/libflipper \
+	  -lflipper
 
-$(eval $(call ADD_TARGET,dacTest_fvm))
+# Create build directory
+$(BUILD_DIR):
+	@mkdir -p $@ || { echo "Error: Failed to create build directory $(@)"; exit 1; }
 
-all:: $(BUILD)/dacTest/dacTest.so $(BUILD)/dacTest_host/dacTest_host $(BUILD)/dacTest_fvm/dacTest_fvm.so
+# Clean
+clean:
+	@rm -f host/call_fvm
+
+.PHONY: all module call_fvm build_client clean

@@ -120,7 +120,7 @@ LF_FUNC int dac_set_channels(int i) {
 /*
   Write 12-bit data to DAC (0-4095)
 */
-LF_FUNC int dac_write(uint32_t data) {
+int dac_write(uint32_t data) {
     // Ensure data is within 12-bit range
     if (data > DACC_MAX_DATA) {
         return lf_error;
@@ -128,6 +128,7 @@ LF_FUNC int dac_write(uint32_t data) {
     dacc_write_conversion_data(DACC, data);
     return lf_success;
 }
+
 
 /*
   Cleanup DAC configuration

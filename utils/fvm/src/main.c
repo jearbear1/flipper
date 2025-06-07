@@ -8,7 +8,10 @@
 #include <dlfcn.h>
 #include <flipper/ll.h>
 
-/* fvm - Creates a local server that acts as a virtual flipper device. */
+// allow FVM to view and utilize peripheral modules
+#include "api/dac.h"
+
+// fvm - Creates a local server that acts as a virtual flipper device.
 
 typedef void (*fmr_plugin_register_t)(struct _lf_device *fvm);
 
@@ -55,6 +58,8 @@ int main(int argc, char *argv[]) {
 
     fvm->modules = lf_ll_create();
 
+    dyld_register(fvm, &dac_module);
+    
     fmr_init();
 
     fvm->_ep_ctx = calloc(1, sizeof(struct _lf_network_context));

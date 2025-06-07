@@ -98,8 +98,8 @@ int main(void) {
     // button_configure();
     
 
-    // dyld_register(_4s, &_dac_module);
-    // dac_configure();
+    dyld_register(_4s, &_dac_module);
+    dac_configure();
 
     // extern struct _lf_module _gpio_module;
     // dyld_register(_4s, &_gpio_module);
